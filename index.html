@@ -136,6 +136,23 @@
       <div class="card"><h2>📈 EVOLUÇÃO</h2><canvas id="wchart" height="160"></canvas><div class="mut" id="wchart-empty" style="text-align:center;display:none;">Registre seu peso pra ver o gráfico.</div></div>
     </section>
 
+    <!-- TREINO -->
+    <section class="view" id="v-treino">
+      <div class="card">
+        <h2>🏋️ TREINO DE HOJE</h2>
+        <div class="big" id="t-burned" style="color:var(--g);">0 <span style="font-size:15px;">kcal queimadas</span></div>
+        <div class="mut" id="t-eatmore">Treine pra liberar mais calorias pra comer! 🔥</div>
+      </div>
+      <div class="card">
+        <h2>➕ ADICIONAR EXERCÍCIO</h2>
+        <label>Atividade</label>
+        <select id="ex-type" onchange="exPreview()"></select>
+        <div class="row" style="margin-top:8px;"><div style="flex:1;"><label>Minutos</label><input id="ex-min" type="number" inputmode="numeric" value="30" oninput="exPreview()"></div><button class="btn" style="align-self:flex-end;" onclick="addExFromForm()">Adicionar</button></div>
+        <div class="mut" id="ex-preview" style="margin-top:8px;"></div>
+      </div>
+      <div class="card"><h2>📋 EXERCÍCIOS DE HOJE</h2><div id="ex-list"></div></div>
+    </section>
+
     <!-- IA -->
     <section class="view" id="v-ia">
       <div class="card" style="padding:12px 14px;"><h2>🤖 ASSISTENTE NATURAL</h2><div class="mut">Sua IA de nutrição. Pergunte, peça dicas, ou registre comida por texto (ex: "comi 2 ovos e 100g de arroz").</div></div>
@@ -149,6 +166,7 @@
     <button class="on" data-v="hoje" onclick="go('hoje')"><span class="i">🏠</span>Hoje</button>
     <button data-v="diario" onclick="go('diario')"><span class="i">🍽️</span>Diário</button>
     <button data-v="metas" onclick="go('metas')"><span class="i">🎯</span>Metas</button>
+    <button data-v="treino" onclick="go('treino')"><span class="i">🏋️</span>Treino</button>
     <button data-v="peso" onclick="go('peso')"><span class="i">⚖️</span>Peso</button>
     <button data-v="ia" onclick="go('ia')"><span class="i">🤖</span>IA</button>
   </nav>
@@ -170,7 +188,7 @@ const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-B
 let state=load();
 function load(){ try{const s=JSON.parse(localStorage.getItem(KEY)); if(s) return s;}catch(e){} return {profile:null,goals:null,days:{},weights:[]}; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
-function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0}; return state.days[d]; }
+function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
 // ===================== FOOD DB (per 100g) =====================
 // unit = grams of "1 unidade" for natural-language logging
@@ -222,9 +240,85 @@ const FOODS={
  'Pizza (fatia)':{kcal:266,p:11,c:33,f:10,unit:100,al:['pizza']},
  'Hambúrguer':{kcal:295,p:17,c:24,f:14,unit:170,al:['hamburguer','hambúrguer','lanche']},
  'Açúcar':{kcal:387,p:0,c:100,f:0,unit:5,al:['acucar','açúcar']},
+ // ---- fitness / esportes ----
+ 'Atum (lata, em água)':{kcal:116,p:26,c:0,f:1,unit:120,al:['atum']},
+ 'Sardinha':{kcal:208,p:25,c:0,f:11,al:['sardinha']},
+ 'Peito de peru':{kcal:135,p:17,c:3,f:6,unit:15,al:['peru','peito de peru','blanquet']},
+ 'Queijo cottage':{kcal:98,p:11,c:3.4,f:4.3,unit:50,al:['cottage']},
+ 'Ricota':{kcal:174,p:11,c:3,f:13,unit:30,al:['ricota']},
+ 'Iogurte grego':{kcal:97,p:9,c:4,f:5,unit:130,al:['grego','iogurte grego']},
+ 'Tofu':{kcal:76,p:8,c:1.9,f:4.8,unit:100,al:['tofu']},
+ 'Soja / proteína de soja':{kcal:173,p:16,c:9,f:9,al:['soja','pts','proteina de soja']},
+ 'Lentilha cozida':{kcal:116,p:9,c:20,f:0.4,al:['lentilha']},
+ 'Grão-de-bico cozido':{kcal:164,p:8.9,c:27,f:2.6,al:['grao de bico','grão de bico','grao-de-bico']},
+ 'Ervilha':{kcal:81,p:5.4,c:14,f:0.4,al:['ervilha']},
+ 'Quinoa cozida':{kcal:120,p:4.4,c:21,f:1.9,al:['quinoa']},
+ 'Barra de proteína':{kcal:350,p:30,c:35,f:9,unit:60,al:['barra de proteina','barrinha','protein bar']},
+ 'Albumina':{kcal:380,p:81,c:5,f:0,unit:15,al:['albumina']},
+ 'Dextrose / maltodextrina':{kcal:380,p:0,c:95,f:0,unit:30,al:['dextrose','malto','maltodextrina','carbo em po']},
+ 'Mel':{kcal:304,p:0.3,c:82,f:0,unit:15,al:['mel']},
+ 'Pão de forma integral':{kcal:253,p:9,c:43,f:4,unit:25,al:['pao de forma','pão de forma']},
+ 'Cuscuz':{kcal:112,p:3.8,c:23,f:0.2,al:['cuscuz']},
+ 'Milho':{kcal:96,p:3.4,c:21,f:1.5,al:['milho']},
+ 'Beterraba':{kcal:43,p:1.6,c:10,f:0.2,al:['beterraba']},
+ 'Abóbora':{kcal:26,p:1,c:6.5,f:0.1,al:['abobora','abóbora']},
+ 'Água de coco':{kcal:19,p:0.7,c:3.7,f:0.2,unit:200,al:['agua de coco','água de coco']},
 };
 const FKEYS=Object.keys(FOODS);
 function findFood(q){ q=norm(q); for(const k of FKEYS){ if(norm(k).includes(q)) return k; const f=FOODS[k]; if(f.al) for(const a of f.al) if(norm(a)===q||q.includes(norm(a))) return k; } return null; }
+
+// ===================== EXERCISE DB (MET) =====================
+const EXS={
+ 'Caminhada':{met:3.5,al:['caminhar','caminhada']},
+ 'Caminhada rápida':{met:5,al:['caminhada rapida','andar rapido']},
+ 'Corrida':{met:9.8,al:['correr','corrida','run']},
+ 'Corrida leve / trote':{met:7,al:['trote','corrida leve','jogging']},
+ 'Bicicleta':{met:7.5,al:['bike','bicicleta','pedalar','ciclismo']},
+ 'Natação':{met:8,al:['nadar','natacao','natação']},
+ 'Musculação':{met:5,al:['musculacao','musculação','academia','pesos','treino de força','treino']},
+ 'Funcional / HIIT':{met:8,al:['funcional','hiit','intervalado']},
+ 'Crossfit':{met:8,al:['crossfit']},
+ 'Futebol':{met:7,al:['futebol','bola','fute']},
+ 'Pular corda':{met:11,al:['pular corda','corda']},
+ 'Dança / Zumba':{met:5,al:['danca','dança','zumba','dancar']},
+ 'Yoga':{met:3,al:['yoga']},
+ 'Pilates':{met:3.5,al:['pilates']},
+ 'Vôlei / Basquete':{met:6.5,al:['volei','vôlei','basquete','basquetebol']},
+ 'Luta / Boxe':{met:9,al:['luta','boxe','muay','jiu','mma','jiujitsu']},
+ 'Spinning / bike ergométrica':{met:8.5,al:['spinning','bike ergometrica','indoor cycling']},
+ 'Elíptico':{met:5,al:['eliptico','elíptico','transport']},
+ 'Remo / remada':{met:7,al:['remo','remada','rowing']},
+ 'Escada / subir escadas':{met:8,al:['escada','escadas','subir escada']},
+ 'Calistenia':{met:5,al:['calistenia','barra','paralela']},
+ 'Abdominais':{met:4.5,al:['abdominais','abdomen','abdômen','prancha']},
+ 'Flexões':{met:4,al:['flexoes','flexões','flexao','flexão']},
+ 'Agachamento':{met:5,al:['agachamento','agachar']},
+ 'Burpee / polichinelo':{met:8,al:['burpee','burpees','polichinelo','jumping jack']},
+ 'Tênis':{met:7,al:['tenis','tênis']},
+ 'Tênis de mesa / ping pong':{met:4,al:['ping pong','tenis de mesa','pingue']},
+ 'Handebol':{met:8,al:['handebol','handball']},
+ 'Capoeira':{met:6.5,al:['capoeira']},
+ 'Step / aeróbica':{met:7.5,al:['step','aerobica','aeróbica','ginastica','ginástica']},
+ 'Trilha / hiking':{met:6,al:['trilha','hiking','montanha','caminhada na trilha']},
+ 'Escalada':{met:8,al:['escalada','escalar']},
+ 'Patins / patinete':{met:7,al:['patins','patinacao','patinação','rollerblade']},
+ 'Skate':{met:5,al:['skate','skating']},
+ 'Surf':{met:5,al:['surf','surfar']},
+ 'Stand up paddle':{met:6,al:['paddle','sup','stand up']},
+ 'Caiaque / canoagem':{met:5,al:['caiaque','canoagem','canoa','remar']},
+ 'Esqui / snowboard':{met:7,al:['esqui','ski','snowboard']},
+ 'Andar a cavalo':{met:5.5,al:['cavalo','equitacao','equitação','hipismo']},
+ 'Golfe':{met:4.8,al:['golfe','golf']},
+ 'Jardinagem':{met:3.8,al:['jardinagem','jardim','horta']},
+ 'Limpeza de casa':{met:3.3,al:['limpeza','faxina','limpar casa']},
+ 'Alongamento':{met:2.3,al:['alongamento','alongar','stretching']},
+};
+const EXKEYS=Object.keys(EXS);
+function findEx(q){ q=norm(q); for(const k of EXKEYS){ if(norm(k).includes(q)) return k; for(const a of EXS[k].al) if(q.includes(norm(a))) return k; } return null; }
+function exKcalPerMin(key){ const w=(state.profile&&state.profile.w)||70; return EXS[key].met*3.5*w/200; }
+function burned(d){ const e=day(d).ex||[]; return Math.round(e.reduce((s,x)=>s+x.kcal,0)); }
+function addExercise(key,min){ const dd=day(); if(!dd.ex)dd.ex=[]; dd.ex.push({name:key,min,kcal:Math.round(exKcalPerMin(key)*min)}); save(); renderAll(); }
+function removeExercise(i){ const dd=day(); dd.ex.splice(i,1); save(); renderAll(); }
 function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 
 // ===================== GOALS =====================
@@ -266,17 +360,27 @@ function addWater(ml){ const dd=day(); dd.water=Math.max(0,dd.water+ml); save();
 
 // ===================== RENDER =====================
 const MEALS=[['cafe','☕ Café da manhã'],['almoco','🍽️ Almoço'],['lanche','🍎 Lanche'],['jantar','🌙 Jantar']];
-function renderAll(){ renderHoje(); renderDiario(); renderPeso(); }
+function renderAll(){ renderHoje(); renderDiario(); renderPeso(); renderTreino(); }
+function renderTreino(){
+  const b=burned(); document.getElementById('t-burned').innerHTML=b+' <span style="font-size:15px;">kcal queimadas</span>';
+  document.getElementById('t-eatmore').textContent = b>0 ? ('🔥 Você liberou +'+b+' kcal pra comer hoje!') : 'Treine pra liberar mais calorias pra comer! 🔥';
+  const sel=document.getElementById('ex-type'); if(sel && !sel.options.length){ sel.innerHTML=EXKEYS.map(k=>`<option value="${k}">${k}</option>`).join(''); }
+  exPreview();
+  const e=day().ex||[]; const list=document.getElementById('ex-list');
+  list.innerHTML = e.length? e.map((x,i)=>`<div class="fitem"><div><div class="nm">${x.name}</div><div class="mc">${x.min} min · 🔥 ${x.kcal} kcal</div></div><span class="x" onclick="removeExercise(${i})">✕</span></div>`).join('') : '<div class="mut">Nenhum exercício hoje. Bora treinar! 💪</div>';
+}
+function exPreview(){ const sel=document.getElementById('ex-type'); const min=+document.getElementById('ex-min').value||0; const pv=document.getElementById('ex-preview'); if(!sel||!sel.value||!pv) return; pv.textContent='≈ '+Math.round(exKcalPerMin(sel.value)*min)+' kcal em '+min+' min'; }
+function addExFromForm(){ const sel=document.getElementById('ex-type'); const min=+document.getElementById('ex-min').value; if(!min||min<1){return;} addExercise(sel.value,min); }
 function macroBar(name,val,goal,col){ const pct=goal?Math.min(100,val/goal*100):0; return `<div class="macro"><div class="top"><span>${name}</span><span>${val}${goal?' / '+goal:''} g</span></div><div class="bar"><i style="width:${pct}%;background:${col}"></i></div></div>`; }
 function renderHoje(){
-  const t=totals(), g=state.goals;
+  const t=totals(), g=state.goals, b=burned(), eff=g?g.kcal+b:0;
   document.getElementById('hdr-date').textContent=fmtDate(todayStr());
   document.getElementById('hdr-goal').textContent=(g?g.kcal:'—')+' kcal';
   document.getElementById('r-kcal').textContent=t.kcal;
-  document.getElementById('r-kcal-goal').textContent='/ '+(g?g.kcal:'—')+' kcal';
-  const pct=g?Math.min(1,t.kcal/g.kcal):0; const circ=327;
+  document.getElementById('r-kcal-goal').innerHTML='/ '+(g?eff:'—')+' kcal'+(b>0?' <span style="color:#2e7d32;">🔥+'+b+'</span>':'');
+  const pct=g?Math.min(1,t.kcal/eff):0; const circ=327;
   const fg=document.getElementById('ring-fg'); fg.style.strokeDashoffset=circ*(1-pct);
-  fg.style.stroke = !g?'#bbb' : t.kcal>g.kcal*1.05?'#e53935' : '#2e7d32';
+  fg.style.stroke = !g?'#bbb' : t.kcal>eff*1.05?'#e53935' : '#2e7d32';
   document.getElementById('macros').innerHTML=
     macroBar('🥩 Proteína',t.p,g?g.protein:0,'var(--p)')+
     macroBar('🍞 Carbo',t.c,g?g.carb:0,'var(--c)')+
@@ -330,7 +434,7 @@ function renderFoodList(){
 function pickFood(k){ const g=+document.getElementById('food-grams').value||100; addFoodEntry(curMeal,k,g); closeFood(); }
 
 // ===================== NAV =====================
-function go(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso')drawChart(); document.querySelector('main').scrollTop=0; }
+function go(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso')drawChart(); if(v==='treino')renderTreino(); document.querySelector('main').scrollTop=0; }
 
 // ===================== AI ASSISTANT =====================
 const KB=[
@@ -352,14 +456,32 @@ const KB=[
  {kw:['creatina'],a:()=>'💊 CREATINA: um dos suplementos mais estudados e seguros. Ajuda na força e no ganho de músculo. 3–5g por dia, todo dia (o horário não importa muito). Beba água. Não é esteroide!'},
  {kw:['suplemento','suplementos','tomar o que'],a:()=>'💊 SUPLEMENTOS: a maioria das pessoas precisa de POUCOS. Os com mais evidência: CREATINA (força/músculo) e WHEY (praticidade pra bater proteína). Vitamina D e B12 dependem do seu caso. O resto geralmente é hype — comida vem primeiro!'},
  {kw:['saudavel','saudável','comer bem','dieta boa','como começar','dica'],a:()=>'🌿 COMER BEM (simples): \n• Coma comida DE VERDADE (menos pacote, mais natural).\n• Proteína em toda refeição.\n• Metade do prato em vegetais/saladas.\n• Carbo de qualidade (integrais, raízes, frutas).\n• Beba água, durma bem, movimente-se.\nConsistência > perfeição. Calcule suas metas na aba "🎯 Metas" que eu te guio!'},
+ {kw:['treino','treinar','exercicio','exercício','academia','musculacao','musculação','malhar','quantas vezes'],a:()=>'🏋️ TREINO: o melhor pra corpo e metabolismo é a MUSCULAÇÃO (treino de força) 3–5x/semana — preserva/ganha músculo, mesmo emagrecendo. Some um pouco de cardio (caminhada/corrida) pra coração e gasto calórico. Registre seus treinos na aba "🏋️ Treino" que eu somo as calorias queimadas no seu dia!'},
+ {kw:['cardio','correr','caminhada','aerobico','aeróbico','emagrece mais'],a:()=>'🏃 CARDIO: ótimo pra saúde do coração e pra gastar calorias (ajuda no emagrecimento). Mas não precisa exagerar — caminhada/corrida 3–4x por semana já ajuda muito. Pra emagrecer, o que mais conta é a alimentação (déficit); o cardio acelera. Combine com musculação!'},
+ {kw:['descanso','sono','dormir','recupera','repouso'],a:()=>'😴 DESCANSO/SONO: é onde o músculo cresce e o corpo se recupera! Durma 7–9h. Sono ruim aumenta a fome, a vontade de doce e atrapalha o emagrecimento e o ganho de massa. Tão importante quanto treinar.'},
+ {kw:['barriga','abdomen','abdômen','tanquinho','gordura localizada'],a:()=>'🔥 BARRIGA/ABDÔMEN: não dá pra "queimar gordura localizada" só com abdominais. O segredo é reduzir a gordura do corpo TODO (déficit calórico + treino) — aí o abdômen aparece. Faça abdominais pra fortalecer, mas a dieta é que define.'},
+ {kw:['vontade de doce','compulsao','compulsão','ansiedade','beliscar','fome a noite'],a:()=>'🍫 VONTADE DE DOCE / COMER POR ANSIEDADE: dicas que ajudam — coma proteína e fibra (saciam mais), beba água, durma bem, e não fique horas sem comer (a fome extrema piora a compulsão). Tenha opções melhores por perto (fruta, iogurte). Se for algo frequente e te incomoda muito, vale procurar um nutri/psicólogo.'},
+ {kw:['alcool','álcool','cerveja','bebida','beber'],a:()=>'🍺 ÁLCOOL: tem 7 kcal por grama (quase como gordura) e atrapalha o emagrecimento, o sono e o ganho de massa. Não precisa zerar, mas modere — e lembra que vem acompanhado de petiscos calóricos. Beba água junto.'},
+ {kw:['ovo','colesterol','quantos ovos'],a:()=>'🥚 OVO: excelente! Proteína de altíssima qualidade, barato e prático. Pode comer todo dia — para a maioria das pessoas, 1–3 ovos/dia é tranquilo e não "entope" o colesterol (isso é mito antigo). A gema tem nutrientes, não jogue fora.'},
+ {kw:['comer a noite','comer de noite','engorda a noite','jantar tarde'],a:()=>'🌙 COMER À NOITE NÃO ENGORDA por si só — o que engorda é o TOTAL de calorias do dia, não o horário. Coma de noite tranquilo, só evite exagerar. Mito derrubado! 😉'},
+ {kw:['detox','desintoxica','chá emagrecedor','cha emagrecedor'],a:()=>'🧪 DETOX / "chá que emagrece": esquece. Seu fígado e rins já desintoxicam sozinhos. Não existe chá/suco mágico — o que funciona é comer bem no geral, beber água e se movimentar. Cuidado com promessas milagrosas.'},
+ {kw:['gluten','glúten','lactose','intoler'],a:()=>'🌾 GLÚTEN/LACTOSE: só precisa cortar se você tem intolerância/alergia diagnosticada (celíaco, intolerante à lactose). Para quem não tem, cortar não emagrece nem é "mais saudável" automaticamente. Na dúvida de sintomas, procure um médico.'},
+ {kw:['agua demais','muita agua','intoxica agua'],a:()=>'💧 Beber água é ótimo, mas não precisa exagerar litros e litros à força. ~35ml/kg por dia já é uma boa meta. Sede e urina clarinha são bons sinais de que está hidratado.'},
+ {kw:['pular refeicao','pular refeição','pular cafe','nao comer'],a:()=>'⏭️ PULAR REFEIÇÃO: pode até fazer parte (ex: jejum), mas se te deixa com fome extrema e te faz exagerar depois, não compensa. O importante é o total do dia. Coma quando tiver fome de verdade, com qualidade.'},
+ {kw:['vitamina','vitaminas','b12','ferro','vitamina d'],a:()=>'💊 VITAMINAS: o ideal é vir da comida variada (frutas, verduras, carnes). Suplementar faz sentido em casos específicos: B12 (veganos), Vitamina D (pouco sol), Ferro (anemia/menstruação intensa). Faça exames e, se precisar, suplemente com orientação.'},
+ {kw:['diabetes','diabetico','diabético','glicemia','açucar no sangue'],a:()=>'🩸 AÇÚCAR NO SANGUE: pra controlar a glicemia, ajuda muito comer fibras, proteína e gordura boa junto dos carboidratos (eles "seguram" o pico), preferir integrais e evitar açúcar/refri. Movimento também ajuda. ⚠️ Se você tem diabetes, siga sempre seu médico/nutri — isso aqui é orientação geral.'},
+ {kw:['pre treino','pré treino','antes do treino','o que comer antes'],a:()=>'⏱️ PRÉ-TREINO: coma um CARBO 30–60min antes pra ter energia (banana, pão, aveia, fruta) + um pouco de proteína se for refeição maior. Café também dá um gás. Evite treinar com muita comida pesada no estômago.'},
+ {kw:['pos treino','pós treino','depois do treino','janela'],a:()=>'⏱️ PÓS-TREINO: capriche na PROTEÍNA (frango, ovos, whey, iogurte) + um carbo pra repor energia (arroz, batata, fruta). Não precisa correr — a "janela" é mais flexível do que diziam; o total do dia é o que mais importa.'},
+ {kw:['plato','platô','estagnou','empacou','nao perco mais','parei de emagrecer'],a:()=>'📉 PLATÔ (estagnou): normal! O corpo se adapta. O que ajuda: revise as porções (às vezes voltamos a comer mais sem perceber — registre tudo aqui), aumente o movimento/passos, capriche na proteína e no sono, e tenha paciência. Pequenos ajustes destravam.'},
+ {kw:['obrigado pela','muito bom','adorei','top','vc e bom','você é bom'],a:()=>'😄 Fico feliz em ajudar! Tô aqui sempre que precisar — registrar comida, treino, montar dieta ou tirar dúvida. Vamos juntos nessa! 🌿💪'},
 ];
 function tnum(){ return state.goals; }
-function todayRemaining(){ const t=totals(),g=state.goals; if(!g) return null; return {kcal:g.kcal-t.kcal,p:g.protein-t.p,c:g.carb-t.c,f:g.fat-t.f,t,g}; }
+function todayRemaining(){ const t=totals(),g=state.goals,b=burned(); if(!g) return null; return {kcal:g.kcal+b-t.kcal,p:g.protein-t.p,c:g.carb-t.c,f:g.fat-t.f,t,g,b}; }
 function ctxResumo(){
   const t=totals(),g=state.goals;
   if(!g) return '📊 Hoje você consumiu '+t.kcal+' kcal (P'+t.p+' C'+t.c+' G'+t.f+'g).\nAinda não calculei suas metas — vá em "🎯 Metas" pra eu personalizar tudo!';
-  const r=todayRemaining();
-  let s='📊 RESUMO DE HOJE:\n• Calorias: '+t.kcal+' / '+g.kcal+'  ('+(r.kcal>=0?('faltam '+r.kcal):('passou '+(-r.kcal)))+' kcal)\n• Proteína: '+t.p+' / '+g.protein+'g'+(r.p>0?(' (faltam '+r.p.toFixed(0)+'g)'):' ✅')+'\n• Carbo: '+t.c+' / '+g.carb+'g\n• Gordura: '+t.f+' / '+g.fat+'g';
+  const r=todayRemaining(), b=burned();
+  let s='📊 RESUMO DE HOJE:\n• Calorias: '+t.kcal+' / '+(g.kcal+b)+(b>0?(' (🔥'+b+' do treino)'):'')+'  ('+(r.kcal>=0?('faltam '+r.kcal):('passou '+(-r.kcal)))+' kcal)\n• Proteína: '+t.p+' / '+g.protein+'g'+(r.p>0?(' (faltam '+r.p.toFixed(0)+'g)'):' ✅')+'\n• Carbo: '+t.c+' / '+g.carb+'g\n• Gordura: '+t.f+' / '+g.fat+'g';
   if(r.p>15) s+='\n\n💡 Tá faltando proteína — quer que eu sugira o que comer? (pergunte "o que comer pra bater a proteína")';
   else if(r.kcal<0) s+='\n\n⚠️ Você passou da meta de calorias hoje. Sem pânico — amanhã é dia novo. Beba água e capriche no movimento.';
   else if(r.kcal<200 && r.kcal>=0) s+='\n\n✅ Quase batendo a meta, mandou bem!';
@@ -412,20 +534,59 @@ function foodLookup(text){
   return '🔎 '+key+' (por 100g): '+f.kcal+' kcal · '+f.p+'g proteína · '+f.c+'g carbo · '+f.f+'g gordura.'+(u?('\n1 unidade ≈ '+u+'g ('+Math.round(f.kcal*u/100)+'kcal).'):'');
 }
 function planDiet(){
-  const g=state.goals; const kcal=g?g.kcal:2000; const s=kcal/2000; const r=x=>Math.max(10,Math.round(x*s/10)*10);
-  const plan=[
-    ['☕ Café da manhã',[['Aveia',r(40)],['Ovo',r(100)],['Banana',r(120)],['Leite desnatado',r(200)]]],
-    ['🍽️ Almoço',[['Arroz integral cozido',r(150)],['Feijão carioca cozido',r(120)],['Frango grelhado (peito)',r(150)],['Brócolis',r(100)],['Azeite de oliva',r(8)]]],
-    ['🍎 Lanche',[['Iogurte natural',r(170)],['Castanhas / nozes',r(20)],['Maçã',r(130)]]],
-    ['🌙 Jantar',[['Batata doce',r(150)],['Tilápia / peixe',r(150)],['Alface',r(60)],['Tomate',r(100)]]],
-  ];
-  let out='🍽️ CARDÁPIO DO DIA'+(g?(' (alvo ~'+g.kcal+' kcal / '+g.protein+'g proteína)'):' (calcule suas metas pra eu ajustar!)')+':\n\n';
+  const g=state.goals; const kcal=g?g.kcal:2000; const goal=(state.profile&&state.profile.goal)||'maintain';
+  const s=kcal/2000; const r=x=>Math.max(10,Math.round(x*s/10)*10);
+  let plan, titulo;
+  if(goal==='lose'){ titulo='🔻 EMAGRECER — proteína alta, mais salada, menos carbo';
+    plan=[
+      ['☕ Café da manhã',[['Ovo',r(100)],['Clara de ovo',r(66)],['Pão integral (fatia)',r(50)],['Café (sem açúcar)',r(50)]]],
+      ['🍽️ Almoço',[['Frango grelhado (peito)',r(180)],['Arroz integral cozido',r(100)],['Feijão carioca cozido',r(80)],['Brócolis',r(120)],['Alface',r(80)]]],
+      ['🍎 Lanche',[['Iogurte grego',r(170)],['Maçã',r(130)]]],
+      ['🌙 Jantar',[['Tilápia / peixe',r(180)],['Alface',r(100)],['Tomate',r(100)],['Azeite de oliva',r(8)]]],
+    ];
+  } else if(goal==='gain'){ titulo='🔺 GANHAR MASSA — mais calorias e carbo pra energia';
+    plan=[
+      ['☕ Café da manhã',[['Aveia',r(60)],['Ovo',r(150)],['Banana',r(120)],['Leite integral',r(250)],['Pasta de amendoim',r(20)]]],
+      ['🍽️ Almoço',[['Arroz branco cozido',r(200)],['Feijão carioca cozido',r(120)],['Carne bovina (patinho)',r(170)],['Batata doce',r(120)],['Azeite de oliva',r(10)]]],
+      ['🍎 Lanche',[['Whey protein',r(30)],['Pão de forma integral',r(50)],['Banana',r(120)]]],
+      ['🌙 Jantar',[['Macarrão cozido',r(180)],['Frango grelhado (peito)',r(170)],['Brócolis',r(80)]]],
+    ];
+  } else { titulo='⚖️ MANTER — equilibrado';
+    plan=[
+      ['☕ Café da manhã',[['Aveia',r(40)],['Ovo',r(100)],['Banana',r(120)],['Leite desnatado',r(200)]]],
+      ['🍽️ Almoço',[['Arroz integral cozido',r(150)],['Feijão carioca cozido',r(120)],['Frango grelhado (peito)',r(150)],['Brócolis',r(100)],['Azeite de oliva',r(8)]]],
+      ['🍎 Lanche',[['Iogurte natural',r(170)],['Castanhas / nozes',r(20)],['Maçã',r(130)]]],
+      ['🌙 Jantar',[['Batata doce',r(150)],['Tilápia / peixe',r(150)],['Alface',r(60)],['Tomate',r(100)]]],
+    ];
+  }
+  let out='🍽️ CARDÁPIO PERSONALIZADO\n'+titulo+(g?('\nAlvo ~'+g.kcal+' kcal · '+g.protein+'g proteína'+(state.profile?(' · pro seu peso de '+state.profile.w+'kg'):'')):' (calcule suas metas em "🎯 Metas" pra eu ajustar ao seu peso!)')+'\n\n';
   let tk=0,tp=0;
-  for(const [meal,items] of plan){ out+=meal+':\n'; for(const [k,grams] of items){ const f=FOODS[k]; const kc=Math.round(f.kcal*grams/100); tk+=kc; tp+=f.p*grams/100; out+='  • '+grams+'g '+k+' ('+kc+'kcal)\n'; } out+='\n'; }
-  out+='≈ '+tk+' kcal e '+Math.round(tp)+'g de proteína no dia. 💪\nÉ um modelo — ajuste as quantidades ao seu gosto. Quer registrar uma refeição? Escreva "comi ...".';
+  for(const [meal,items] of plan){ out+=meal+':\n'; for(const [k,grams] of items){ const f=FOODS[k]; if(!f)continue; const kc=Math.round(f.kcal*grams/100); tk+=kc; tp+=f.p*grams/100; out+='  • '+grams+'g '+k+' ('+kc+'kcal)\n'; } out+='\n'; }
+  out+='≈ '+tk+' kcal e '+Math.round(tp)+'g de proteína no dia. 💪\nÉ um modelo pro seu objetivo — ajuste ao seu gosto! Quer registrar uma refeição? Escreva "comi ...".';
   return out;
 }
+// ---- conversational onboarding ----
+let onboard=null;
+function startOnboarding(){ onboard={step:0,data:{}}; addMsg('Pra deixar tudo certinho e personalizado, me responde 6 perguntas rápidas! 😊\n\n1️⃣ Qual o seu PESO, em kg? (ex: 72)','bot'); }
+function showOnboardChips(opts){ const c=document.getElementById('ai-chips'); c.innerHTML=opts.map(o=>`<span class="pill" onclick="chip('${o}')">${o}</span>`).join(''); }
+function onboardInput(text){
+  const t=norm(text); const num=parseFloat(((text.match(/(\d+[.,]?\d*)/)||[])[1]||'').replace(',','.')); const d=onboard.data;
+  if(onboard.step===0){ if(!(num>=25&&num<=400)){ addMsg('Me diz só o número do seu peso, ex: 72','bot'); return; } d.w=num; onboard.step=1; addMsg('Boa! 2️⃣ Sua ALTURA em cm? (ex: 175)','bot'); return; }
+  if(onboard.step===1){ if(!(num>=100&&num<=250)){ addMsg('Altura em cm, ex: 175','bot'); return; } d.h=num; onboard.step=2; addMsg('3️⃣ Sua IDADE? (ex: 25)','bot'); return; }
+  if(onboard.step===2){ if(!(num>=8&&num<=110)){ addMsg('Idade em anos, ex: 25','bot'); return; } d.a=num; onboard.step=3; addMsg('4️⃣ Você é Homem ou Mulher? (toque numa opção 👇)','bot'); showOnboardChips(['Homem','Mulher']); return; }
+  if(onboard.step===3){ d.sex=/mulher|fem/.test(t)?'f':'m'; onboard.step=4; addMsg('5️⃣ Quão ativo você é no dia a dia?','bot'); showOnboardChips(['Sedentário','Leve','Moderado','Intenso','Atleta']); return; }
+  if(onboard.step===4){ const map=[['sedent',1.2],['leve',1.375],['moder',1.55],['intens',1.725],['atlet',1.9]]; let act=1.55; for(const [k,v] of map) if(t.includes(k)) act=v; d.act=act; onboard.step=5; addMsg('6️⃣ Por último: qual seu OBJETIVO?','bot'); showOnboardChips(['Emagrecer','Manter','Ganhar massa']); return; }
+  if(onboard.step===5){ d.goal=/emagr|perder|secar|magr/.test(t)?'lose':/ganhar|massa|bulk|crescer/.test(t)?'gain':'maintain';
+    document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-act').value=d.act; document.getElementById('i-goal').value=d.goal;
+    calcGoals(); onboard=null; buildChips(); const g=state.goals;
+    addMsg('🎉 Prontinho, tudo configurado!\n\n🔥 Meta: '+g.kcal+' kcal/dia\n🥩 '+g.protein+'g proteína · 🍞 '+g.carb+'g carbo · 🥑 '+g.fat+'g gordura\n\nAgora você pode: registrar comida ("comi 2 ovos"), pedir um cardápio ("monte uma dieta"), ou tirar qualquer dúvida de nutrição/treino. Bora! 💪','bot');
+    return;
+  }
+}
+// ---- exercise logging from text ----
+function tryLogEx(text){ const t=norm(text); if(!/(fiz|treinei|corri|caminh|pedal|nad|joguei|malhei|exerc|treino de)/.test(t)) return null; const key=findEx(t); if(!key) return null; let min=30; let m=t.match(/(\d+)\s*(h|hora)/); if(m){ min=parseInt(m[1])*60; } else { m=t.match(/(\d+)\s*(min|minuto)?/); if(m&&m[1]) min=parseInt(m[1]); } addExercise(key,min); const kc=Math.round(exKcalPerMin(key)*min); const r=todayRemaining(); return '🏋️ Registrei: '+key+' por '+min+' min → 🔥 '+kc+' kcal queimadas!'+(r?(' Agora você pode comer +'+Math.max(0,r.kcal)+' kcal hoje.'):'')+' Mandou bem! 💪'; }
 function assistantAnswer(text){
+  const lx=tryLogEx(text); if(lx) return lx;
   const log=tryLog(text); if(log) return log;
   const t=norm(text);
   if(/(crie|cria|monte|monta|faca|faça|fazer|sugere|sugira|quero|me passa|preciso de|gera|elabora).{0,18}(dieta|cardapio|plano|refeic|cardápio)|plano alimentar|cardapio|cardápio|que (comer|fazer) (no )?(dia|cafe|almoco|jantar)/.test(t)) return planDiet();
@@ -440,18 +601,24 @@ function assistantAnswer(text){
   return '🤔 Não tenho certeza, mas posso ajudar bastante! Tente:\n• "comi 2 ovos e 100g de arroz" (eu registro)\n• "quanto falta hoje?"\n• "o que comer pra bater a proteína?"\n• "quantas calorias tem banana?"\n• "como emagrecer", "ganhar massa", "low carb", "jejum", "creatina"...';
 }
 function addMsg(text,who){ const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+(who==='me'?'me':'bot'); d.textContent=text; c.appendChild(d); document.querySelector('main').scrollTop=1e9; }
-function aiSend(){ const inp=document.getElementById('ai-input'); const v=inp.value.trim(); if(!v)return; addMsg(v,'me'); inp.value=''; setTimeout(()=>{ addMsg(assistantAnswer(v),'bot'); renderHoje(); },180); }
-const CHIPS=['💡 Resumo de hoje','🍽️ O que comer?','🥩 Bater proteína','🔻 Como emagrecer','💧 Água','💊 Creatina'];
+function aiSend(){ const inp=document.getElementById('ai-input'); const v=inp.value.trim(); if(!v)return; addMsg(v,'me'); inp.value=''; if(onboard){ setTimeout(()=>onboardInput(v),150); return; } setTimeout(()=>{ addMsg(assistantAnswer(v),'bot'); renderHoje(); },180); }
+const CHIPS=['💡 Resumo de hoje','🍽️ Monte uma dieta','🥩 Bater proteína','🏋️ Como treinar','🔻 Como emagrecer','😴 Sono'];
 function buildChips(){ const c=document.getElementById('ai-chips'); c.innerHTML=CHIPS.map(q=>`<span class="pill" onclick="chip('${q.replace(/'/g,"")}')">${q}</span>`).join(''); }
 function chip(q){ document.getElementById('ai-input').value=q.replace(/^\S+\s/,''); aiSend(); }
 document.getElementById('ai-input').addEventListener('keydown',e=>{ if(e.key==='Enter')aiSend(); });
+['ex-min','ex-type'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',exPreview); });
 
 // ===================== INIT =====================
 function init(){
   if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; renderGoalsOut(); }
   renderAll(); buildChips();
-  addMsg('Oi! 🌿 Eu sou seu assistente de nutrição. Me diga o que comeu (ex: "comi 2 ovos e 100g de arroz") que eu registro e calculo, ou pergunte qualquer coisa sobre dieta, emagrecer, ganhar massa, etc. 💪', 'bot');
-  if(!state.goals){ setTimeout(()=>addMsg('Dica: comece calculando suas metas na aba "🎯 Metas" — aí eu personalizo tudo pra você!','bot'),400); }
+  if(!state.profile){
+    go('ia');
+    addMsg('Oi! 🌿 Bem-vindo ao natural.life! Eu sou seu assistente de nutrição e treino.', 'bot');
+    setTimeout(startOnboarding, 500);
+  } else {
+    addMsg('Oi de novo! 🌿 Pode registrar comida ("comi 2 ovos"), treino ("fiz 30min de corrida"), pedir um cardápio, ou tirar qualquer dúvida. 💪','bot');
+  }
 }
 init();
 </script>

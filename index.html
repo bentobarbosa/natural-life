@@ -152,11 +152,13 @@
         <div class="water-row" id="water-glasses"></div>
         <div class="mut" style="margin-top:8px;" id="water-txt">0 / 0 ml</div>
       </div>
-      <div class="card">
-        <h2>⚡ AÇÕES RÁPIDAS</h2>
+      <div class="card" id="mealnow-card">
+        <h2 id="mealnow-title">🍽️ HORA DO ALMOÇO</h2>
+        <div class="mut" id="mealnow-info" style="margin-bottom:10px;"></div>
+        <div id="mealnow-sugg" style="margin-bottom:10px;"></div>
         <div class="row">
-          <button class="btn wide" onclick="openFood('almoco')">🍽️ Adicionar alimento</button>
-          <button class="btn sec" onclick="go('ia')" style="white-space:nowrap;">🤖 Perguntar IA</button>
+          <button class="btn" style="flex:1;" id="mealnow-ask">🤖 O que comer agora?</button>
+          <button class="btn sec" style="flex:1;" id="mealnow-add">➕ Registrar</button>
         </div>
       </div>
     </section>
@@ -179,7 +181,7 @@
         <label>Nível de atividade</label>
         <select id="i-act"><option value="1.2">Sedentário (pouco/nenhum exercício)</option><option value="1.375">Leve (1-3x/semana)</option><option value="1.55" selected>Moderado (3-5x/semana)</option><option value="1.725">Intenso (6-7x/semana)</option><option value="1.9">Muito intenso (atleta)</option></select>
         <label>Objetivo</label>
-        <select id="i-goal"><option value="lose">Emagrecer 🔻</option><option value="maintain" selected>Manter ⚖️</option><option value="gain">Ganhar massa 🔺</option></select>
+        <select id="i-goal"><option value="lose">Emagrecer (perder gordura) 🔻</option><option value="recomp">Definir (perder gordura + manter músculo) ✨</option><option value="maintain" selected>Manter ⚖️</option><option value="gain">Ganhar músculo 💪</option><option value="bulk">Crescer / ganhar peso 🔺</option></select>
         <button class="btn wide" style="margin-top:14px;" onclick="calcGoals()">CALCULAR METAS</button>
       </div>
       <div class="card" id="goals-out" style="display:none;"></div>
@@ -250,12 +252,13 @@
 <div class="ov" id="set-ov"><div class="ovcard">
   <h3>⚙️ Configurações</h3>
   <div style="font-weight:800;color:var(--g);font-size:14px;margin:6px 0;">🤖 Cérebro da IA</div>
-  <div class="sub" style="margin-bottom:8px;">Por padrão a IA é offline (grátis, privada). Conecte uma IA real (ChatGPT ou Google Gemini) colando sua chave pra respostas muito mais inteligentes.</div>
-  <label>Provedor</label>
+  <div class="sub" id="ai-status" style="margin-bottom:8px;"></div>
+  <label>Modo da IA</label>
   <select id="set-prov" onchange="setProvUI()">
-    <option value="off">Offline (assistente embutido)</option>
-    <option value="gemini">Google Gemini (tem plano grátis)</option>
-    <option value="openai">OpenAI / ChatGPT</option>
+    <option value="auto">🤖 Automática (recomendado)</option>
+    <option value="off">Só offline (sem internet)</option>
+    <option value="gemini">Conectar minha chave Gemini</option>
+    <option value="openai">Conectar minha chave OpenAI</option>
   </select>
   <div id="set-key-wrap" style="display:none;">
     <label>Sua chave de API</label>
@@ -311,7 +314,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'off',key:''}; if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:''}; if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -453,8 +456,9 @@ function calcGoals(){
   if(!w||!h||!a){ alert('Preencha peso, altura e idade.'); return; }
   const tmb=10*w+6.25*h-5*a+(sex==='m'?5:-161);
   let kcal=Math.round(tmb*act);
-  if(goal==='lose') kcal-=500; if(goal==='gain') kcal+=350;
-  const protein=Math.round(w*(goal==='maintain'?1.6:2.0));
+  const ADJ={lose:-500,recomp:-200,maintain:0,gain:300,bulk:550}; kcal+=(ADJ[goal]!==undefined?ADJ[goal]:0);
+  const PMUL={lose:2.0,recomp:2.2,maintain:1.6,gain:2.0,bulk:1.8};
+  const protein=Math.round(w*(PMUL[goal]||1.6));
   const fat=Math.round(kcal*0.25/9);
   const carb=Math.round((kcal-protein*4-fat*9)/4);
   state.profile={w,h,a,sex,act,goal}; state.goals={kcal,protein,carb,fat,tmb:Math.round(tmb)};
@@ -533,6 +537,53 @@ function renderCoach(){
   else { const d=new Date(); tip=TIPS[(d.getFullYear()*1000+ (d.getMonth()*31+d.getDate()))%TIPS.length]; }
   const emoji=streak>=7?'🏆':streak>=3?'🔥':'🌱';
   el.innerHTML='<div class="st">'+emoji+' SEQUÊNCIA</div><div class="big2">'+streak+(streak===1?' dia':' dias')+' seguidos</div><div class="tip">💡 <b>Dica:</b> '+tip+'</div>';
+  renderMealNow();
+}
+// ---- meal-time aware assistant ----
+const MEAL_LABEL={cafe:'CAFÉ DA MANHÃ',almoco:'ALMOÇO',lanche:'LANCHE',jantar:'JANTAR'};
+const MEAL_EMOJI={cafe:'☕',almoco:'🍽️',lanche:'🍎',jantar:'🌙'};
+const MEAL_POOL={
+ cafe:['Ovo','Clara de ovo','Aveia','Pão integral (fatia)','Tapioca','Iogurte grego','Iogurte natural','Banana','Mamão','Whey protein','Leite desnatado','Queijo cottage','Pão de forma integral','Café (sem açúcar)'],
+ almoco:['Frango grelhado (peito)','Carne bovina (patinho)','Tilápia / peixe','Arroz integral cozido','Feijão carioca cozido','Lentilha cozida','Batata doce','Brócolis','Alface','Cenoura','Quinoa cozida','Azeite de oliva'],
+ lanche:['Iogurte grego','Maçã','Banana','Castanhas / nozes','Whey protein','Barra de proteína','Queijo cottage','Pasta de amendoim','Pão de forma integral','Ovo'],
+ jantar:['Tilápia / peixe','Frango grelhado (peito)','Ovo','Abóbora','Brócolis','Alface','Tomate','Batata doce','Atum (lata, em água)','Azeite de oliva']
+};
+function mealSuggestion(meal){
+  const pool=MEAL_POOL[meal]||MEAL_POOL.almoco; const r=todayRemaining();
+  const needP = r? r.p>15 : true; // prioriza proteína se faltar
+  const ranked=[...pool].sort((a,b)=> needP ? (FOODS[b].p-FOODS[a].p) : (FOODS[a].kcal-FOODS[b].kcal));
+  const picks=ranked.slice(0,3).map(k=>{ const f=FOODS[k]; const g=f.unit||(meal==='lanche'?80:120); return {k,g,kc:Math.round(f.kcal*g/100),p:Math.round(f.p*g/100)}; });
+  return picks;
+}
+function mealSuggestText(meal){
+  const picks=mealSuggestion(meal); const r=todayRemaining();
+  let s=MEAL_EMOJI[meal]+' Pro seu '+MEAL_LABEL[meal].toLowerCase()+', sugiro:\n';
+  s+=picks.map(p=>'• '+p.g+'g '+p.k+' ('+p.kc+'kcal, '+p.p+'g proteína)').join('\n');
+  const tk=picks.reduce((a,p)=>a+p.kc,0), tp=picks.reduce((a,p)=>a+p.p,0);
+  s+='\n\n≈ '+tk+' kcal e '+tp+'g de proteína.';
+  if(r) s+=' Você ainda tem '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína pra hoje.';
+  s+='\nQuer registrar? Escreva "comi '+picks[0].g+'g '+picks[0].k.split(' ')[0].toLowerCase()+'". 😉';
+  return s;
+}
+function renderMealNow(){
+  const card=document.getElementById('mealnow-card'); if(!card)return;
+  const meal=mealByTime();
+  document.getElementById('mealnow-title').textContent=MEAL_EMOJI[meal]+' HORA DO '+MEAL_LABEL[meal];
+  const eaten=day().meals[meal]||[]; const ekc=eaten.reduce((s,i)=>s+i.kcal,0);
+  let info= eaten.length? ('Você já registrou '+eaten.length+' item(ns) nessa refeição ('+ekc+' kcal): '+eaten.map(i=>i.name).slice(0,3).join(', ')) : 'Nada registrado nessa refeição ainda.';
+  document.getElementById('mealnow-info').textContent=info;
+  const picks=mealSuggestion(meal);
+  document.getElementById('mealnow-sugg').innerHTML='<div class="mut" style="font-weight:700;margin-bottom:3px;">💡 Sugestão pra agora:</div>'+picks.map(p=>'<div class="fitem" style="cursor:pointer;" onclick="addFoodEntry(\''+meal+'\',\''+p.k.replace(/'/g,"\\'")+'\','+p.g+');renderHoje();"><div><div class="nm">'+p.k+'</div><div class="mc">'+p.g+'g · '+p.kc+'kcal · '+p.p+'g prot</div></div><span class="add">＋</span></div>').join('');
+  document.getElementById('mealnow-ask').onclick=()=>askMealNow(meal);
+  document.getElementById('mealnow-add').onclick=()=>openFood(meal);
+}
+function askMealNow(meal){
+  go('ia');
+  const r=todayRemaining(); const eaten=day().meals[meal]||[];
+  let q='O que é uma boa opção pra eu comer agora no '+MEAL_LABEL[meal].toLowerCase()+'?';
+  if(eaten.length) q+=' Já comi '+eaten.map(i=>i.name).join(', ')+' nessa refeição.';
+  if(r) q+=' Hoje ainda tenho '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína disponíveis.';
+  document.getElementById('ai-input').value=q; aiSend();
 }
 function renderDiario(){
   document.getElementById('diario-date').textContent=fmtDate(todayStr());
@@ -718,7 +769,8 @@ function foodLookup(text){
   return '🔎 '+key+' (por 100g): '+f.kcal+' kcal · '+f.p+'g proteína · '+f.c+'g carbo · '+f.f+'g gordura.'+(u?('\n1 unidade ≈ '+u+'g ('+Math.round(f.kcal*u/100)+'kcal).'):'');
 }
 function planDiet(){
-  const g=state.goals; const kcal=g?g.kcal:2000; const goal=(state.profile&&state.profile.goal)||'maintain';
+  const g=state.goals; const kcal=g?g.kcal:2000; let goal=(state.profile&&state.profile.goal)||'maintain';
+  goal={recomp:'lose',bulk:'gain'}[goal]||goal; // recomp usa base de emagrecer; crescer usa base de ganhar
   const s=kcal/2000; const r=x=>Math.max(10,Math.round(x*s/10)*10);
   let plan, titulo;
   if(goal==='lose'){ titulo='🔻 EMAGRECER — proteína alta, mais salada, menos carbo';
@@ -775,7 +827,13 @@ function assistantAnswer(text){
   const log=tryLog(text); if(log) return log;
   const rc=tryRecipe(text); if(rc) return rc;
   const t=norm(text);
-  const dietWanted=/(crie|cria|monte|monta|faca|faça|fazer|sugere|sugira|quero|me passa|preciso de|gera|elabora|manda|passa).{0,10}(dieta|cardapio|plano alimentar|cardápio)|plano alimentar|me da um cardapio|que (comer|fazer) (no )?(dia|cafe|café|almoco|almoço|jantar|lanche)/;
+  // sugestão por horário/refeição (ex: "o que comer agora", "comer no almoço")
+  if(/(comer|comida|opcao|opç|sugest|lanchar).{0,22}(agora|nesse horario|neste horario|nesse momento)|o que comer agora|comer agora|(comer|comida|opcao|opç|sugest).{0,14}(no |neste |nesse |de |da )?(cafe|café|almoc|almoç|lanche|jantar|manha|manhã)/.test(t)){
+    let meal=mealByTime();
+    if(/cafe|café|manha|manhã/.test(t))meal='cafe'; else if(/almoc|almoç/.test(t))meal='almoco'; else if(/lanche|tarde/.test(t))meal='lanche'; else if(/jantar|noite|janta/.test(t))meal='jantar';
+    return mealSuggestText(meal);
+  }
+  const dietWanted=/(crie|cria|monte|monta|faca|faça|fazer|sugere|sugira|quero|me passa|preciso de|gera|elabora|manda|passa).{0,10}(dieta|cardapio|plano alimentar|cardápio)|plano alimentar|me da um cardapio|que (comer|fazer) (no )?(dia)/;
   if(dietWanted.test(t)&&!/(livre|disciplina|cheat|lixo)/.test(t)) return planDiet();
   if(/(resumo|quanto falta|quanto comi|como to|como estou|meu dia hoje|balanco do dia|como foi meu dia)/.test(t)) return ctxResumo();
   if(/(o que comer|sugest|sugir|dica de comida|bater (a )?proteina|preciso de proteina|me sugere)/.test(t)) return suggestFor(/(proteina|proteína)/.test(t)?'p':'kcal');
@@ -809,20 +867,33 @@ function aiSend(){
   // logging always handled locally (fast + reliable), even with real AI
   const quick=tryLogEx(v)||tryLog(v);
   if(quick){ setTimeout(()=>{ addMsg(quick,'bot'); renderHoje(); },150); return; }
-  if(state.ai&&state.ai.prov!=='off'&&state.ai.key){
+  const ai=effAI();
+  if(ai){
     const el=addMsg('digitando…','bot',true); el.classList.add('typing');
-    askRealAI(v).then(ans=>{ el.classList.remove('typing'); el.textContent=ans; document.querySelector('main').scrollTop=1e9; saveChatMsg('bot',ans); speak(ans); renderHoje(); buildChips(); })
-      .catch(err=>{ el.classList.remove('typing'); const fb=assistantAnswer(v)+'\n\n⚠️ (IA real indisponível: '+(err&&err.message||'erro')+' — respondi no modo offline.)'; el.textContent=fb; saveChatMsg('bot',fb); buildChips(); });
+    askRealAI(v,ai).then(ans=>{ el.classList.remove('typing'); el.textContent=ans; document.querySelector('main').scrollTop=1e9; saveChatMsg('bot',ans); speak(ans); renderHoje(); buildChips(); })
+      .catch(err=>{ el.classList.remove('typing'); const fb=assistantAnswer(v); el.textContent=fb; saveChatMsg('bot',fb); renderHoje(); buildChips(); });
     return;
   }
   setTimeout(()=>{ addMsg(assistantAnswer(v),'bot'); renderHoje(); buildChips(); },180);
 }
-// ---- REAL AI (optional, via API key) ----
+// ---- REAL AI ----
+// IA EMBUTIDA: cole aqui uma chave GRÁTIS do Google Gemini (aistudio.google.com/apikey)
+// e a IA real conecta SOZINHA em TODOS os dispositivos, sem ninguém precisar configurar nada.
+const BUILTIN_AI={prov:'gemini',key:''};
+// Resolve qual IA usar: a chave do próprio usuário tem prioridade; senão a embutida; senão offline.
+function effAI(){
+  const a=state.ai||{};
+  if(a.prov==='off') return null;
+  if((a.prov==='gemini'||a.prov==='openai')&&a.key) return {prov:a.prov,key:a.key};
+  if(BUILTIN_AI.key) return {prov:BUILTIN_AI.prov,key:BUILTIN_AI.key};
+  return null;
+}
+function aiConnected(){ return !!effAI(); }
 let aiHistory=[];
 function aiContext(){
   const p=state.profile,g=state.goals,t=totals(),b=burned(),r=todayRemaining();
   let c='DADOS DO USUÁRIO HOJE ('+todayStr()+'):\n';
-  if(p) c+='- Perfil: '+p.w+'kg, '+p.h+'cm, '+p.a+' anos, '+(p.sex==='m'?'homem':'mulher')+', objetivo: '+({lose:'emagrecer',gain:'ganhar massa',maintain:'manter'}[p.goal]||p.goal)+'.\n';
+  if(p) c+='- Perfil: '+p.w+'kg, '+p.h+'cm, '+p.a+' anos, '+(p.sex==='m'?'homem':'mulher')+', objetivo: '+({lose:'emagrecer (perder gordura)',recomp:'definir (recomposição: perder gordura mantendo músculo)',maintain:'manter o peso',gain:'ganhar músculo',bulk:'crescer / ganhar peso'}[p.goal]||p.goal)+'.\n';
   if(g) c+='- Metas: '+g.kcal+' kcal, '+g.protein+'g proteína, '+g.carb+'g carbo, '+g.fat+'g gordura.\n';
   c+='- Já consumiu: '+t.kcal+' kcal (P'+t.p+' C'+t.c+' G'+t.f+'g). Queimou '+b+' kcal em treino.\n';
   if(r) c+='- Falta hoje: '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína.\n';
@@ -845,17 +916,18 @@ function aiSystem(){
    aiContext()
   ].join('\n');
 }
-async function askRealAI(text){
+async function askRealAI(text,ai){
+  ai=ai||effAI()||{prov:'gemini',key:''};
   aiHistory.push({role:'user',content:text}); if(aiHistory.length>10) aiHistory=aiHistory.slice(-10);
-  const key=state.ai.key.trim(); let ans;
-  if(state.ai.prov==='gemini'){
+  const key=(ai.key||'').trim(); let ans;
+  if(ai.prov==='gemini'){
     const body={system_instruction:{parts:[{text:aiSystem()}]},contents:aiHistory.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),generationConfig:{temperature:0.7,maxOutputTokens:900}};
     const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await res.json(); if(!res.ok) throw new Error((j.error&&j.error.message)||('HTTP '+res.status));
     ans=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(sem resposta)';
   } else {
     const body={model:'gpt-4o-mini',temperature:0.7,max_tokens:800,messages:[{role:'system',content:aiSystem()},...aiHistory]};
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)});
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^Bearer\s+/i,'')},body:JSON.stringify(body)});
     const j=await res.json(); if(!res.ok) throw new Error((j.error&&j.error.message)||('HTTP '+res.status));
     ans=(((j.choices||[])[0]||{}).message||{}).content||'(sem resposta)';
   }
@@ -869,11 +941,27 @@ document.getElementById('ai-input').addEventListener('keydown',e=>{ if(e.key==='
 ['ex-min','ex-type'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',exPreview); });
 
 // ===================== SETTINGS =====================
-function openSettings(){ document.getElementById('set-prov').value=state.ai.prov; document.getElementById('set-key').value=state.ai.key||''; setProvUI(); document.getElementById('sw-water').classList.toggle('on',!!state.settings.remWater); document.getElementById('sw-meal').classList.toggle('on',!!state.settings.remMeal); document.getElementById('sw-dark').classList.toggle('on',!!state.settings.dark); document.getElementById('sw-tts').classList.toggle('on',!!state.settings.tts); document.getElementById('set-ov').classList.add('on'); }
-function setProvUI(){ const p=document.getElementById('set-prov').value; const wrap=document.getElementById('set-key-wrap'); wrap.style.display=p==='off'?'none':'block'; const hint=document.getElementById('set-key-hint'); hint.innerHTML=p==='gemini'?'Pegue grátis em <b>aistudio.google.com/apikey</b>':p==='openai'?'Pegue em <b>platform.openai.com/api-keys</b> (uso pago)':''; }
+function aiStatusText(){
+  if(state.ai.prov==='off') return '💬 Modo offline ativo — assistente embutido (grátis, sem internet, responde milhares de dúvidas).';
+  if((state.ai.prov==='gemini'||state.ai.prov==='openai')&&state.ai.key) return '✅ Conectada com a SUA chave ('+state.ai.prov+') — IA inteligente ativa em qualquer dúvida.';
+  if(BUILTIN_AI.key) return '✅ IA inteligente ATIVA automaticamente (sem precisar configurar nada).';
+  return '🤖 IA automática: tentando a IA inteligente; sem chave configurada, uso o assistente embutido (offline) — que já é bem forte. Pra liberar 100%, conecte uma chave grátis abaixo.';
+}
+function openSettings(){ document.getElementById('set-prov').value=state.ai.prov; document.getElementById('set-key').value=state.ai.key||''; setProvUI(); document.getElementById('ai-status').textContent=aiStatusText(); document.getElementById('sw-water').classList.toggle('on',!!state.settings.remWater); document.getElementById('sw-meal').classList.toggle('on',!!state.settings.remMeal); document.getElementById('sw-dark').classList.toggle('on',!!state.settings.dark); document.getElementById('sw-tts').classList.toggle('on',!!state.settings.tts); document.getElementById('set-ov').classList.add('on'); }
+function setProvUI(){ const p=document.getElementById('set-prov').value; const wrap=document.getElementById('set-key-wrap'); wrap.style.display=(p==='gemini'||p==='openai')?'block':'none'; const hint=document.getElementById('set-key-hint'); hint.innerHTML=p==='gemini'?'Pegue grátis em <b>aistudio.google.com/apikey</b>':p==='openai'?'Pegue em <b>platform.openai.com/api-keys</b> (uso pago)':''; }
 function toggleSw(k){ const id={water:'sw-water',meal:'sw-meal',dark:'sw-dark',tts:'sw-tts'}[k]; const on=document.getElementById(id).classList.toggle('on'); if(k==='dark') applyDark(on); }
 function applyDark(on){ document.body.classList.toggle('dark',!!on); }
-function saveSettings(){ state.ai.prov=document.getElementById('set-prov').value; state.ai.key=document.getElementById('set-key').value.trim(); state.settings.remWater=document.getElementById('sw-water').classList.contains('on'); state.settings.remMeal=document.getElementById('sw-meal').classList.contains('on'); state.settings.dark=document.getElementById('sw-dark').classList.contains('on'); state.settings.tts=document.getElementById('sw-tts').classList.contains('on'); save(); document.getElementById('set-ov').classList.remove('on'); startReminders(); applyDark(state.settings.dark); const m=state.ai.prov!=='off'&&state.ai.key?'🤖 IA real conectada! Pode perguntar qualquer coisa.':'⚙️ Configurações salvas.'; go('ia'); addMsg(m,'bot'); }
+async function saveSettings(){
+  const prov=document.getElementById('set-prov').value; const key=document.getElementById('set-key').value.trim();
+  const st=document.getElementById('ai-status');
+  if((prov==='gemini'||prov==='openai')&&key){ st.textContent='⏳ Testando sua chave…'; try{ await askRealAI('responda apenas: ok',{prov,key}); }catch(e){ st.textContent='❌ Chave inválida: '+(e.message||'erro')+'. Confira e tente de novo.'; aiHistory=[]; return; } aiHistory=[]; }
+  state.ai.prov=prov; state.ai.key=key;
+  state.settings.remWater=document.getElementById('sw-water').classList.contains('on'); state.settings.remMeal=document.getElementById('sw-meal').classList.contains('on'); state.settings.dark=document.getElementById('sw-dark').classList.contains('on'); state.settings.tts=document.getElementById('sw-tts').classList.contains('on');
+  save(); document.getElementById('set-ov').classList.remove('on'); startReminders(); applyDark(state.settings.dark);
+  const m=aiConnected()?'🤖 IA inteligente conectada! Pode me perguntar QUALQUER coisa. 🚀':'⚙️ Configurações salvas. Tô no modo offline, mas já respondo muita coisa!';
+  go('ia'); addMsg(m,'bot');
+}
+function reonboard(){ document.getElementById('set-ov').classList.remove('on'); startOb(); }
 function reonboard(){ document.getElementById('set-ov').classList.remove('on'); startOb(); }
 
 // ===================== ONBOARDING (full-screen wizard) =====================
@@ -884,7 +972,7 @@ const OB_STEPS=[
  {t:'🎂 Sua idade',s:'O metabolismo muda com a idade.',k:'a',type:'num',ph:'anos (ex: 25)',min:8,max:110},
  {t:'⚧ Sexo biológico',s:'Afeta o cálculo do metabolismo.',k:'sex',type:'opt',opts:[['m','👨 Homem'],['f','👩 Mulher']]},
  {t:'🏃 Nível de atividade',s:'Quanto você se movimenta no dia a dia?',k:'act',type:'opt',opts:[['1.2','😴 Sedentário'],['1.375','🚶 Leve (1-3x/sem)'],['1.55','🏃 Moderado (3-5x/sem)'],['1.725','🔥 Intenso (6-7x/sem)'],['1.9','🏆 Atleta']]},
- {t:'🎯 Seu objetivo',s:'O que você quer alcançar? Vou ajustar suas calorias pra isso.',k:'goal',type:'opt',opts:[['lose','🔻 Emagrecer'],['maintain','⚖️ Manter o peso'],['gain','🔺 Ganhar massa']]},
+ {t:'🎯 Seu objetivo',s:'O que você quer alcançar? Vou ajustar suas calorias pra isso.',k:'goal',type:'opt',opts:[['lose','🔻 Emagrecer'],['recomp','✨ Definir'],['maintain','⚖️ Manter'],['gain','💪 Ganhar músculo'],['bulk','🔺 Crescer / ganhar peso']]},
 ];
 function startOb(){ ob={step:0,d:{}}; document.getElementById('ob-ov').classList.add('on'); renderOb(); }
 function renderOb(){
@@ -1009,7 +1097,7 @@ function toggleMic(){
 function onPhoto(input){
   const file=input.files&&input.files[0]; input.value=''; if(!file)return;
   const res=document.getElementById('photo-result');
-  if(!(state.ai&&state.ai.prov!=='off'&&state.ai.key)){ res.innerHTML='<div class="mut" style="padding:8px 0;">📸 Pra estimar comida por FOTO eu preciso de uma IA real conectada. Toque na ⚙️ e conecte o Gemini (tem plano grátis) ou OpenAI. Enquanto isso, busque o alimento na lista abaixo. 🙂</div>'; return; }
+  if(!aiConnected()){ res.innerHTML='<div class="mut" style="padding:8px 0;">📸 Pra estimar comida por FOTO eu preciso da IA inteligente ativa. Toque na ⚙️ e ative a IA. Enquanto isso, busque o alimento na lista abaixo. 🙂</div>'; return; }
   res.innerHTML='<div class="mut" style="padding:8px 0;">📸 Analisando a foto…</div>';
   const reader=new FileReader();
   reader.onload=()=>{ const dataUrl=reader.result; visionEstimate(dataUrl).then(o=>{
@@ -1022,17 +1110,17 @@ function onPhoto(input){
 }
 function addPhotoFood(){ const s=window._scanFood; if(!s)return; day().meals[curMeal].push({name:s.name,grams:1,kcal:Math.round(s.kcal),p:+(+s.p).toFixed(1),c:+(+s.c).toFixed(1),f:+(+s.f).toFixed(1)}); save(); renderAll(); document.getElementById('photo-result').innerHTML=''; closeFood(); }
 async function visionEstimate(dataUrl){
-  const key=state.ai.key.trim();
+  const ai=effAI()||{prov:'gemini',key:''}; const key=(ai.key||'').trim();
   const prompt='Analise a foto de comida e ESTIME a porção visível. Responda APENAS com um JSON puro, sem texto extra, no formato: {"name":"nome do prato em português","kcal":número,"p":gramas_proteina,"c":gramas_carbo,"f":gramas_gordura}. Se não houver comida, responda {"name":""}.';
   let txt;
-  if(state.ai.prov==='gemini'){
+  if(ai.prov==='gemini'){
     const b64=dataUrl.split(',')[1]; const mime=(dataUrl.match(/^data:(.*?);/)||[])[1]||'image/jpeg';
     const body={contents:[{role:'user',parts:[{text:prompt},{inline_data:{mime_type:mime,data:b64}}]}],generationConfig:{temperature:0.2}};
     const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||('HTTP '+r.status)); txt=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
   } else {
     const body={model:'gpt-4o-mini',temperature:0.2,messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:dataUrl}}]}]};
-    const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)});
+    const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^Bearer\s+/i,'')},body:JSON.stringify(body)});
     const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||('HTTP '+r.status)); txt=(((j.choices||[])[0]||{}).message||{}).content||'';
   }
   const m=txt.match(/\{[\s\S]*\}/); if(!m) return null; let o; try{o=JSON.parse(m[0]);}catch(e){return null;} if(!o.name) return null;
@@ -1058,7 +1146,7 @@ const WEEKDAYS=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'
 let weekPlan=null,planView='days';
 function openPlanner(){ if(!weekPlan) genPlan(); else { renderPlan(); document.getElementById('plan-ov').classList.add('on'); } document.getElementById('plan-ov').classList.add('on'); }
 function genPlan(){
-  const goal=(state.profile&&state.profile.goal)||'maintain'; const bank=PLAN_BANK[goal]||PLAN_BANK.maintain;
+  let goal=(state.profile&&state.profile.goal)||'maintain'; goal={recomp:'lose',bulk:'gain'}[goal]||goal; const bank=PLAN_BANK[goal]||PLAN_BANK.maintain;
   const g=state.goals; const target=g?g.kcal:2000;
   const pick=(arr,i)=>arr[i%arr.length];
   weekPlan=WEEKDAYS.map((dn,i)=>{

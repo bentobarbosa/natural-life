@@ -68,13 +68,45 @@
   #ai-input{flex:1;}
   #ai-send{background:var(--g);color:#fff;border:none;border-radius:12px;width:48px;font-size:18px;font-weight:800;cursor:pointer;}
   canvas{width:100%;display:block;}
+  /* settings gear */
+  .gear{background:rgba(255,255,255,.18);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;margin-left:8px;}
+  .gear:active{transform:scale(.92);}
+  /* generic overlay */
+  .ov{position:fixed;inset:0;z-index:60;background:rgba(20,30,20,.55);display:none;align-items:center;justify-content:center;padding:16px;}
+  .ov.on{display:flex;}
+  .ovcard{background:#fff;width:100%;max-width:460px;border-radius:20px;padding:20px 18px;max-height:92vh;overflow-y:auto;animation:up .25s;}
+  .ovcard h3{color:var(--g);font-size:18px;margin-bottom:6px;}
+  .ovcard .sub{color:var(--mut);font-size:13px;margin-bottom:14px;line-height:1.45;}
+  .opts{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;}
+  .opt{flex:1 1 40%;background:#f1f7ef;border:2px solid #e1ecde;border-radius:14px;padding:13px 10px;font-weight:700;font-size:14px;cursor:pointer;text-align:center;color:var(--ink);}
+  .opt.sel,.opt:active{border-color:var(--g);background:#e3f1e0;color:var(--g);}
+  .prog{display:flex;gap:5px;margin-bottom:14px;}
+  .prog i{flex:1;height:5px;border-radius:3px;background:#e3ecdf;}
+  .prog i.on{background:var(--g2);}
+  .scanvid{width:100%;border-radius:14px;background:#000;aspect-ratio:4/3;object-fit:cover;}
+  .toggle{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #eef3ec;}
+  .toggle .lbl{font-weight:700;font-size:14px;} .toggle .d{font-size:12px;color:var(--mut);}
+  .sw{width:46px;height:26px;border-radius:14px;background:#cdd8ca;position:relative;cursor:pointer;flex:none;transition:.2s;}
+  .sw.on{background:var(--g2);} .sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;}
+  .sw.on i{left:23px;}
+  .rcard{background:#f6faf5;border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer;}
+  .rcard .rt{font-weight:800;color:var(--g);font-size:14px;display:flex;justify-content:space-between;}
+  .rcard .rk{font-size:12px;color:var(--mut);margin-top:2px;}
+  .rcard .rbody{display:none;margin-top:8px;font-size:13px;line-height:1.5;}
+  .rcard.open .rbody{display:block;}
+  .tag{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;background:#e3f1e0;color:var(--g);margin-left:6px;}
+  .typing{opacity:.6;font-style:italic;}
+  .lk{color:var(--g);font-weight:700;text-decoration:underline;cursor:pointer;font-size:13px;}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div><h1>🌿 natural.life</h1><div class="date" id="hdr-date"></div></div>
-    <div style="text-align:right;"><div style="font-size:11px;opacity:.85;">META</div><div style="font-size:18px;font-weight:800;" id="hdr-goal">— kcal</div></div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <div style="text-align:right;"><div style="font-size:11px;opacity:.85;">META</div><div style="font-size:18px;font-weight:800;" id="hdr-goal">— kcal</div></div>
+      <button class="gear" onclick="openSettings()" title="Configurações">⚙️</button>
+    </div>
   </header>
   <main>
     <!-- HOJE -->
@@ -105,7 +137,9 @@
 
     <!-- DIARIO -->
     <section class="view" id="v-diario">
-      <div class="card"><h2>🍽️ DIÁRIO ALIMENTAR</h2><div class="mut" id="diario-date"></div></div>
+      <div class="card"><h2>🍽️ DIÁRIO ALIMENTAR</h2><div class="mut" id="diario-date"></div>
+        <button class="btn sec wide" style="margin-top:10px;" onclick="openRecipes()">🍳 Receitas saudáveis</button>
+      </div>
       <div id="meals"></div>
     </section>
 
@@ -134,6 +168,7 @@
         <div class="mut" id="weight-delta"></div>
       </div>
       <div class="card"><h2>📈 EVOLUÇÃO</h2><canvas id="wchart" height="160"></canvas><div class="mut" id="wchart-empty" style="text-align:center;display:none;">Registre seu peso pra ver o gráfico.</div></div>
+      <div class="card"><h2>📊 RELATÓRIO SEMANAL</h2><canvas id="rchart" height="150"></canvas><div id="report-stats"></div></div>
     </section>
 
     <!-- TREINO -->
@@ -176,8 +211,57 @@
 <div id="modal"><div class="sheet">
   <h3>Adicionar a <span id="modal-meal">Almoço</span></h3>
   <input id="food-search" placeholder="🔎 Buscar alimento (ex: frango, arroz, banana)" oninput="renderFoodList()">
-  <div class="row" style="margin-top:8px;"><div style="flex:1;"><label>Quantidade (g/ml)</label><input id="food-grams" type="number" inputmode="numeric" value="100"></div><button class="btn sec" onclick="closeFood()" style="align-self:flex-end;">Fechar</button></div>
+  <div class="row" style="margin-top:8px;"><div style="flex:1;"><label>Quantidade (g/ml)</label><input id="food-grams" type="number" inputmode="numeric" value="100"></div><button class="btn" onclick="openScanner()" style="align-self:flex-end;white-space:nowrap;">📷 Escanear</button><button class="btn sec" onclick="closeFood()" style="align-self:flex-end;">Fechar</button></div>
   <div id="flist"></div>
+</div></div>
+
+<!-- onboarding overlay -->
+<div class="ov" id="ob-ov"><div class="ovcard" id="ob-card"></div></div>
+
+<!-- settings -->
+<div class="ov" id="set-ov"><div class="ovcard">
+  <h3>⚙️ Configurações</h3>
+  <div style="font-weight:800;color:var(--g);font-size:14px;margin:6px 0;">🤖 Cérebro da IA</div>
+  <div class="sub" style="margin-bottom:8px;">Por padrão a IA é offline (grátis, privada). Conecte uma IA real (ChatGPT ou Google Gemini) colando sua chave pra respostas muito mais inteligentes.</div>
+  <label>Provedor</label>
+  <select id="set-prov" onchange="setProvUI()">
+    <option value="off">Offline (assistente embutido)</option>
+    <option value="gemini">Google Gemini (tem plano grátis)</option>
+    <option value="openai">OpenAI / ChatGPT</option>
+  </select>
+  <div id="set-key-wrap" style="display:none;">
+    <label>Sua chave de API</label>
+    <input id="set-key" type="password" placeholder="cole sua chave aqui" autocomplete="off">
+    <div class="mut" id="set-key-hint" style="margin-top:4px;font-size:11px;"></div>
+  </div>
+  <div style="font-weight:800;color:var(--g);font-size:14px;margin:16px 0 2px;">🔔 Lembretes</div>
+  <div class="sub" style="margin-bottom:4px;">Funcionam enquanto o app está aberto na tela.</div>
+  <div class="toggle"><div><div class="lbl">💧 Beber água</div><div class="d">Lembra a cada 1h30</div></div><div class="sw" id="sw-water" onclick="toggleSw('water')"><i></i></div></div>
+  <div class="toggle"><div><div class="lbl">🍽️ Registrar refeições</div><div class="d">Café, almoço e jantar</div></div><div class="sw" id="sw-meal" onclick="toggleSw('meal')"><i></i></div></div>
+  <div class="row" style="margin-top:16px;gap:8px;">
+    <button class="btn sec" onclick="reonboard()" style="flex:1;">✏️ Refazer perfil</button>
+    <button class="btn" onclick="saveSettings()" style="flex:1;">Salvar</button>
+  </div>
+  <div style="text-align:center;margin-top:12px;"><span class="lk" style="color:#c62828;" onclick="if(confirm('Apagar TODOS os dados do app?')){localStorage.removeItem(KEY);location.reload();}">Apagar todos os dados</span></div>
+</div></div>
+
+<!-- scanner -->
+<div class="ov" id="scan-ov"><div class="ovcard">
+  <h3>📷 Escanear código de barras</h3>
+  <div class="sub" id="scan-msg">Aponte a câmera para o código de barras do produto.</div>
+  <video id="scan-vid" class="scanvid" playsinline muted></video>
+  <div id="scan-manual" style="margin-top:10px;display:none;"><label>Sem câmera? Digite o código de barras</label><div class="row"><input id="scan-code" inputmode="numeric" placeholder="ex: 7891000100103"><button class="btn" onclick="lookupBarcode(document.getElementById('scan-code').value)">Buscar</button></div></div>
+  <div id="scan-result" style="margin-top:10px;"></div>
+  <button class="btn sec wide" style="margin-top:12px;" onclick="closeScanner()">Fechar</button>
+</div></div>
+
+<!-- recipes -->
+<div class="ov" id="rec-ov"><div class="ovcard">
+  <h3>🍳 Receitas saudáveis</h3>
+  <div class="sub">Receitas fit com calorias e macros já calculados. Toque pra ver o modo de preparo, ou registre direto no diário.</div>
+  <div class="opts" id="rec-filter"></div>
+  <div id="rec-list"></div>
+  <button class="btn sec wide" style="margin-top:10px;" onclick="document.getElementById('rec-ov').classList.remove('on')">Fechar</button>
 </div></div>
 
 <script>
@@ -186,7 +270,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ try{const s=JSON.parse(localStorage.getItem(KEY)); if(s) return s;}catch(e){} return {profile:null,goals:null,days:{},weights:[]}; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'off',key:''}; if(!s.settings) s.settings={remWater:false,remMeal:false}; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -434,7 +518,7 @@ function renderFoodList(){
 function pickFood(k){ const g=+document.getElementById('food-grams').value||100; addFoodEntry(curMeal,k,g); closeFood(); }
 
 // ===================== NAV =====================
-function go(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso')drawChart(); if(v==='treino')renderTreino(); document.querySelector('main').scrollTop=0; }
+function go(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso'){drawChart();renderReport();} if(v==='treino')renderTreino(); document.querySelector('main').scrollTop=0; }
 
 // ===================== AI ASSISTANT =====================
 const KB=[
@@ -585,9 +669,11 @@ function onboardInput(text){
 }
 // ---- exercise logging from text ----
 function tryLogEx(text){ const t=norm(text); if(!/(fiz|treinei|corri|caminh|pedal|nad|joguei|malhei|exerc|treino de)/.test(t)) return null; const key=findEx(t); if(!key) return null; let min=30; let m=t.match(/(\d+)\s*(h|hora)/); if(m){ min=parseInt(m[1])*60; } else { m=t.match(/(\d+)\s*(min|minuto)?/); if(m&&m[1]) min=parseInt(m[1]); } addExercise(key,min); const kc=Math.round(exKcalPerMin(key)*min); const r=todayRemaining(); return '🏋️ Registrei: '+key+' por '+min+' min → 🔥 '+kc+' kcal queimadas!'+(r?(' Agora você pode comer +'+Math.max(0,r.kcal)+' kcal hoje.'):'')+' Mandou bem! 💪'; }
+function tryRecipe(text){ const t=norm(text); if(!/(receita|recipe|o que cozinhar|me ensina a fazer|prato fit|ideia de prato)/.test(t)) return null; const goal=(state.profile&&state.profile.goal)||'maintain'; let pool=RECIPES.filter(r=>r.tag===goal); if(!pool.length)pool=RECIPES; const r=pool[Math.floor(Math.random()*pool.length)]; return '🍳 RECEITA: '+r.n+' ('+r.kcal+' kcal · P'+r.p+' C'+r.c+' G'+r.f+')\n\nIngredientes:\n'+r.ing.map(x=>'• '+x).join('\n')+'\n\nModo: '+r.m+'\n\n💡 Veja mais em "Diário → 🍳 Receitas saudáveis".'; }
 function assistantAnswer(text){
   const lx=tryLogEx(text); if(lx) return lx;
   const log=tryLog(text); if(log) return log;
+  const rc=tryRecipe(text); if(rc) return rc;
   const t=norm(text);
   if(/(crie|cria|monte|monta|faca|faça|fazer|sugere|sugira|quero|me passa|preciso de|gera|elabora).{0,18}(dieta|cardapio|plano|refeic|cardápio)|plano alimentar|cardapio|cardápio|que (comer|fazer) (no )?(dia|cafe|almoco|jantar)/.test(t)) return planDiet();
   if(/(resumo|quanto falta|quanto comi|como to|como estou|meu dia|hoje|balanc)/.test(t)) return ctxResumo();
@@ -600,24 +686,187 @@ function assistantAnswer(text){
   if(best) return best.a();
   return '🤔 Não tenho certeza, mas posso ajudar bastante! Tente:\n• "comi 2 ovos e 100g de arroz" (eu registro)\n• "quanto falta hoje?"\n• "o que comer pra bater a proteína?"\n• "quantas calorias tem banana?"\n• "como emagrecer", "ganhar massa", "low carb", "jejum", "creatina"...';
 }
-function addMsg(text,who){ const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+(who==='me'?'me':'bot'); d.textContent=text; c.appendChild(d); document.querySelector('main').scrollTop=1e9; }
-function aiSend(){ const inp=document.getElementById('ai-input'); const v=inp.value.trim(); if(!v)return; addMsg(v,'me'); inp.value=''; if(onboard){ setTimeout(()=>onboardInput(v),150); return; } setTimeout(()=>{ addMsg(assistantAnswer(v),'bot'); renderHoje(); },180); }
-const CHIPS=['💡 Resumo de hoje','🍽️ Monte uma dieta','🥩 Bater proteína','🏋️ Como treinar','🔻 Como emagrecer','😴 Sono'];
+function addMsg(text,who){ const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+(who==='me'?'me':'bot'); d.textContent=text; c.appendChild(d); document.querySelector('main').scrollTop=1e9; return d; }
+function aiSend(){
+  const inp=document.getElementById('ai-input'); const v=inp.value.trim(); if(!v)return; addMsg(v,'me'); inp.value='';
+  if(onboard){ setTimeout(()=>onboardInput(v),150); return; }
+  // logging always handled locally (fast + reliable), even with real AI
+  const quick=tryLogEx(v)||tryLog(v);
+  if(quick){ setTimeout(()=>{ addMsg(quick,'bot'); renderHoje(); },150); return; }
+  if(state.ai&&state.ai.prov!=='off'&&state.ai.key){
+    const el=addMsg('digitando…','bot'); el.classList.add('typing');
+    askRealAI(v).then(ans=>{ el.classList.remove('typing'); el.textContent=ans; document.querySelector('main').scrollTop=1e9; renderHoje(); })
+      .catch(err=>{ el.classList.remove('typing'); el.textContent=assistantAnswer(v)+'\n\n⚠️ (IA real indisponível: '+(err&&err.message||'erro')+' — respondi no modo offline.)'; });
+    return;
+  }
+  setTimeout(()=>{ addMsg(assistantAnswer(v),'bot'); renderHoje(); },180);
+}
+// ---- REAL AI (optional, via API key) ----
+let aiHistory=[];
+function aiContext(){
+  const p=state.profile,g=state.goals,t=totals(),b=burned(),r=todayRemaining();
+  let c='DADOS DO USUÁRIO HOJE ('+todayStr()+'):\n';
+  if(p) c+='- Perfil: '+p.w+'kg, '+p.h+'cm, '+p.a+' anos, '+(p.sex==='m'?'homem':'mulher')+', objetivo: '+({lose:'emagrecer',gain:'ganhar massa',maintain:'manter'}[p.goal]||p.goal)+'.\n';
+  if(g) c+='- Metas: '+g.kcal+' kcal, '+g.protein+'g proteína, '+g.carb+'g carbo, '+g.fat+'g gordura.\n';
+  c+='- Já consumiu: '+t.kcal+' kcal (P'+t.p+' C'+t.c+' G'+t.f+'g). Queimou '+b+' kcal em treino.\n';
+  if(r) c+='- Falta hoje: '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína.\n';
+  return c;
+}
+function aiSystem(){
+  return 'Você é o assistente do app "natural.life", um nutricionista e personal trainer especialista, caloroso, motivador e direto ao ponto. Responda SEMPRE em português do Brasil, de forma clara, prática e com emojis quando ajudar. Dê conselhos seguros e baseados em evidência sobre nutrição, dieta, treino, suplementos e hábitos. Use os dados do usuário pra personalizar. Em temas clínicos (doenças, remédios, gravidez) oriente procurar um profissional. Seja conciso (no máx ~12 linhas).\n\n'+aiContext();
+}
+async function askRealAI(text){
+  aiHistory.push({role:'user',content:text}); if(aiHistory.length>10) aiHistory=aiHistory.slice(-10);
+  const key=state.ai.key.trim(); let ans;
+  if(state.ai.prov==='gemini'){
+    const body={system_instruction:{parts:[{text:aiSystem()}]},contents:aiHistory.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),generationConfig:{temperature:0.7,maxOutputTokens:700}};
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await res.json(); if(!res.ok) throw new Error((j.error&&j.error.message)||('HTTP '+res.status));
+    ans=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(sem resposta)';
+  } else {
+    const body={model:'gpt-4o-mini',temperature:0.7,messages:[{role:'system',content:aiSystem()},...aiHistory]};
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)});
+    const j=await res.json(); if(!res.ok) throw new Error((j.error&&j.error.message)||('HTTP '+res.status));
+    ans=(((j.choices||[])[0]||{}).message||{}).content||'(sem resposta)';
+  }
+  aiHistory.push({role:'assistant',content:ans}); return ans.trim();
+}
+const CHIPS=['💡 Resumo de hoje','🍽️ Monte uma dieta','🍳 Receita fit','🥩 Bater proteína','🏋️ Como treinar','🔻 Como emagrecer'];
 function buildChips(){ const c=document.getElementById('ai-chips'); c.innerHTML=CHIPS.map(q=>`<span class="pill" onclick="chip('${q.replace(/'/g,"")}')">${q}</span>`).join(''); }
 function chip(q){ document.getElementById('ai-input').value=q.replace(/^\S+\s/,''); aiSend(); }
 document.getElementById('ai-input').addEventListener('keydown',e=>{ if(e.key==='Enter')aiSend(); });
 ['ex-min','ex-type'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',exPreview); });
 
+// ===================== SETTINGS =====================
+function openSettings(){ document.getElementById('set-prov').value=state.ai.prov; document.getElementById('set-key').value=state.ai.key||''; setProvUI(); document.getElementById('sw-water').classList.toggle('on',!!state.settings.remWater); document.getElementById('sw-meal').classList.toggle('on',!!state.settings.remMeal); document.getElementById('set-ov').classList.add('on'); }
+function setProvUI(){ const p=document.getElementById('set-prov').value; const wrap=document.getElementById('set-key-wrap'); wrap.style.display=p==='off'?'none':'block'; const hint=document.getElementById('set-key-hint'); hint.innerHTML=p==='gemini'?'Pegue grátis em <b>aistudio.google.com/apikey</b>':p==='openai'?'Pegue em <b>platform.openai.com/api-keys</b> (uso pago)':''; }
+function toggleSw(k){ const id=k==='water'?'sw-water':'sw-meal'; document.getElementById(id).classList.toggle('on'); }
+function saveSettings(){ state.ai.prov=document.getElementById('set-prov').value; state.ai.key=document.getElementById('set-key').value.trim(); state.settings.remWater=document.getElementById('sw-water').classList.contains('on'); state.settings.remMeal=document.getElementById('sw-meal').classList.contains('on'); save(); document.getElementById('set-ov').classList.remove('on'); startReminders(); const m=state.ai.prov!=='off'&&state.ai.key?'🤖 IA real conectada! Pode perguntar qualquer coisa.':'⚙️ Configurações salvas.'; go('ia'); addMsg(m,'bot'); }
+function reonboard(){ document.getElementById('set-ov').classList.remove('on'); startOb(); }
+
+// ===================== ONBOARDING (full-screen wizard) =====================
+let ob={step:0,d:{}};
+const OB_STEPS=[
+ {t:'👋 Bem-vindo ao natural.life!',s:'Vou montar seu plano em 30 segundos. Primeiro, qual o seu PESO?',k:'w',type:'num',ph:'kg (ex: 72)',min:25,max:400},
+ {t:'📏 Sua altura',s:'Pra calcular suas calorias com precisão.',k:'h',type:'num',ph:'cm (ex: 175)',min:100,max:250},
+ {t:'🎂 Sua idade',s:'O metabolismo muda com a idade.',k:'a',type:'num',ph:'anos (ex: 25)',min:8,max:110},
+ {t:'⚧ Sexo biológico',s:'Afeta o cálculo do metabolismo.',k:'sex',type:'opt',opts:[['m','👨 Homem'],['f','👩 Mulher']]},
+ {t:'🏃 Nível de atividade',s:'Quanto você se movimenta no dia a dia?',k:'act',type:'opt',opts:[['1.2','😴 Sedentário'],['1.375','🚶 Leve (1-3x/sem)'],['1.55','🏃 Moderado (3-5x/sem)'],['1.725','🔥 Intenso (6-7x/sem)'],['1.9','🏆 Atleta']]},
+ {t:'🎯 Seu objetivo',s:'O que você quer alcançar? Vou ajustar suas calorias pra isso.',k:'goal',type:'opt',opts:[['lose','🔻 Emagrecer'],['maintain','⚖️ Manter o peso'],['gain','🔺 Ganhar massa']]},
+];
+function startOb(){ ob={step:0,d:{}}; document.getElementById('ob-ov').classList.add('on'); renderOb(); }
+function renderOb(){
+  const st=OB_STEPS[ob.step]; const c=document.getElementById('ob-card');
+  let prog='<div class="prog">'+OB_STEPS.map((_,i)=>`<i class="${i<=ob.step?'on':''}"></i>`).join('')+'</div>';
+  let body;
+  if(st.type==='num'){ body=`<input id="ob-in" type="number" inputmode="decimal" placeholder="${st.ph}" value="${ob.d[st.k]||''}"><button class="btn wide" style="margin-top:12px;" onclick="obNum()">${ob.step===OB_STEPS.length-1?'Concluir ✅':'Próximo →'}</button>`; }
+  else { body='<div class="opts">'+st.opts.map(o=>`<div class="opt ${ob.d[st.k]===o[0]?'sel':''}" onclick="obPick('${o[0]}')">${o[1]}</div>`).join('')+'</div>'; }
+  c.innerHTML=prog+`<h3>${st.t}</h3><div class="sub">${st.s}</div>`+body+(ob.step===0?'<div style="text-align:center;margin-top:12px;"><span class="lk" onclick="skipOb()">pular por agora</span></div>':'');
+  setTimeout(()=>{const i=document.getElementById('ob-in'); if(i){i.focus(); i.onkeydown=e=>{if(e.key==='Enter')obNum();};}},60);
+}
+function obNum(){ const st=OB_STEPS[ob.step]; const v=parseFloat((document.getElementById('ob-in').value||'').replace(',','.')); if(!(v>=st.min&&v<=st.max)){ const i=document.getElementById('ob-in'); i.style.borderColor='#e53935'; return; } ob.d[st.k]=v; obAdvance(); }
+function obPick(val){ const st=OB_STEPS[ob.step]; ob.d[st.k]=val; renderOb(); setTimeout(obAdvance,180); }
+function obAdvance(){ if(ob.step<OB_STEPS.length-1){ ob.step++; renderOb(); } else obFinish(); }
+function obFinish(){
+  const d=ob.d; if(!d.w||!d.h||!d.a){ skipOb(); return; } d.sex=d.sex||'m'; d.act=d.act||'1.55'; d.goal=d.goal||'maintain';
+  document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-act').value=d.act; document.getElementById('i-goal').value=d.goal;
+  calcGoals(); document.getElementById('ob-ov').classList.remove('on');
+  if(!state.weights.length){ state.weights.push({date:todayStr(),kg:d.w}); save(); }
+  go('ia'); const g=state.goals;
+  addMsg('🎉 Pronto, '+(d.sex==='f'?'tudo certo':'tudo certo')+'! Seu plano:\n\n🔥 '+g.kcal+' kcal/dia\n🥩 '+g.protein+'g proteína · 🍞 '+g.carb+'g carbo · 🥑 '+g.fat+'g gordura\n\nAgora é só viver! Você pode:\n• Registrar comida: "comi 2 ovos e arroz"\n• Registrar treino: "fiz 30min de corrida"\n• Pedir um cardápio: "monte uma dieta"\n• Tirar qualquer dúvida de nutrição e treino 💪','bot');
+}
+function skipOb(){ document.getElementById('ob-ov').classList.remove('on'); go('hoje'); }
+
+// ===================== BARCODE SCANNER =====================
+let scanStream=null,scanRun=false,barcodeDet=null;
+async function openScanner(){
+  document.getElementById('scan-ov').classList.add('on'); document.getElementById('scan-result').innerHTML='';
+  const msg=document.getElementById('scan-msg');
+  if(!('BarcodeDetector' in window)){ document.getElementById('scan-manual').style.display='block'; msg.textContent='Seu navegador não detecta código pela câmera. Digite o número do código de barras abaixo:'; document.getElementById('scan-vid').style.display='none'; return; }
+  try{
+    barcodeDet=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const vid=document.getElementById('scan-vid'); vid.style.display='block'; vid.srcObject=scanStream; await vid.play(); scanRun=true; scanLoop();
+  }catch(e){ document.getElementById('scan-manual').style.display='block'; document.getElementById('scan-vid').style.display='none'; msg.textContent='Não consegui acessar a câmera. Digite o código de barras abaixo:'; }
+}
+async function scanLoop(){
+  if(!scanRun) return; const vid=document.getElementById('scan-vid');
+  try{ const codes=await barcodeDet.detect(vid); if(codes&&codes.length){ scanRun=false; lookupBarcode(codes[0].rawValue); return; } }catch(e){}
+  requestAnimationFrame(scanLoop);
+}
+function closeScanner(){ scanRun=false; if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; } document.getElementById('scan-ov').classList.remove('on'); }
+async function lookupBarcode(code){
+  code=(code||'').replace(/\D/g,''); if(!code){return;}
+  const r=document.getElementById('scan-result'); r.innerHTML='<div class="mut">🔎 Buscando '+code+'…</div>';
+  try{
+    const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,brands,nutriments');
+    const j=await res.json();
+    if(j.status!==1||!j.product){ r.innerHTML='<div class="mut">😕 Produto não encontrado nessa base. Tente buscar pelo nome na lista.</div>'; return; }
+    const p=j.product, n=p.nutriments||{}; const name=(p.product_name||'Produto')+(p.brands?(' ('+p.brands.split(',')[0]+')'):'');
+    const kc=Math.round(n['energy-kcal_100g']||(n['energy_100g']?n['energy_100g']/4.184:0)); const pr=+(n.proteins_100g||0), cb=+(n.carbohydrates_100g||0), ft=+(n.fat_100g||0);
+    if(!kc){ r.innerHTML='<div class="mut">Achei "'+name+'" mas sem dados de caloria. 😕</div>'; return; }
+    window._scanFood={name,kcal:kc,p:pr,c:cb,f:ft};
+    r.innerHTML='<div class="rcard" style="cursor:default;"><div class="rt">'+name+'</div><div class="rk">por 100g: '+kc+'kcal · P'+pr+' C'+cb+' G'+ft+'</div><div class="row" style="margin-top:8px;"><input id="scan-g" type="number" inputmode="numeric" value="100" style="flex:1;"><span class="mut" style="align-self:center;">g</span><button class="btn" onclick="addScanned()">Adicionar</button></div></div>';
+  }catch(e){ r.innerHTML='<div class="mut">Erro ao buscar (sem internet?). Tente de novo.</div>'; }
+}
+function addScanned(){ const s=window._scanFood; if(!s)return; const g=(+document.getElementById('scan-g').value||100)/100; day().meals[curMeal].push({name:s.name,grams:Math.round(g*100),kcal:Math.round(s.kcal*g),p:+(s.p*g).toFixed(1),c:+(s.c*g).toFixed(1),f:+(s.f*g).toFixed(1)}); save(); renderAll(); closeScanner(); closeFood(); }
+
+// ===================== REMINDERS =====================
+let remTimers=[];
+function notify(title,body){ try{ if('Notification' in window&&Notification.permission==='granted') new Notification(title,{body}); else alert(title+'\n'+body); }catch(e){} }
+function startReminders(){
+  remTimers.forEach(t=>clearInterval(t)); remTimers=[];
+  if((state.settings.remWater||state.settings.remMeal)&&'Notification'in window&&Notification.permission==='default') Notification.requestPermission();
+  if(state.settings.remWater) remTimers.push(setInterval(()=>{ const dd=day(); if(dd.water<2500) notify('💧 Hora da água!','Você está em '+dd.water+'ml hoje. Bora hidratar! 💦'); },90*60*1000));
+  if(state.settings.remMeal) remTimers.push(setInterval(()=>{ const h=new Date().getHours(); if([8,12,19].includes(h)) notify('🍽️ Hora de comer','Não esqueça de registrar sua refeição no natural.life!'); },60*60*1000));
+}
+
+// ===================== WEEKLY REPORT =====================
+function renderReport(){
+  const cv=document.getElementById('rchart'); if(!cv) return; const days=[]; const now=new Date();
+  for(let i=6;i>=0;i--){ const dt=new Date(now); dt.setDate(now.getDate()-i); const ds=dt.toISOString().slice(0,10); days.push({ds,lbl:['D','S','T','Q','Q','S','S'][dt.getDay()],t:totals(ds),b:burned(ds),w:(state.days[ds]&&state.days[ds].water)||0}); }
+  const DPR=Math.min(devicePixelRatio||1,2),w=cv.clientWidth||320,h=150; cv.width=w*DPR; cv.height=h*DPR; const x=cv.getContext('2d'); x.setTransform(DPR,0,0,DPR,0,0); x.clearRect(0,0,w,h);
+  const goal=state.goals?state.goals.kcal:2000; const mx=Math.max(goal*1.2,...days.map(d=>d.t.kcal),1); const bw=(w-20)/7;
+  if(state.goals){ const gy=h-22-(goal/mx)*(h-40); x.strokeStyle='#9ccc9a'; x.setLineDash([4,4]); x.beginPath(); x.moveTo(10,gy); x.lineTo(w-10,gy); x.stroke(); x.setLineDash([]); }
+  days.forEach((d,i)=>{ const bh=(d.t.kcal/mx)*(h-40); const bx=10+i*bw+bw*0.18, bwid=bw*0.64, by=h-22-bh;
+    x.fillStyle=state.goals&&d.t.kcal>goal*1.05?'#ef9a9a':'#66bb6a'; x.beginPath(); if(x.roundRect)x.roundRect(bx,by,bwid,Math.max(0,bh),5);else x.rect(bx,by,bwid,Math.max(0,bh)); x.fill();
+    x.fillStyle='#6b7b6b'; x.font='10px sans-serif'; x.textAlign='center'; x.fillText(d.lbl,bx+bwid/2,h-6); if(d.t.kcal>0) x.fillText(d.t.kcal,bx+bwid/2,by-3); });
+  const valid=days.filter(d=>d.t.kcal>0); const avg=valid.length?Math.round(valid.reduce((s,d)=>s+d.t.kcal,0)/valid.length):0;
+  const avgP=valid.length?Math.round(valid.reduce((s,d)=>s+d.t.p,0)/valid.length):0; const trainDays=days.filter(d=>d.b>0).length; const avgW=valid.length?Math.round(days.reduce((s,d)=>s+d.w,0)/7):0;
+  document.getElementById('report-stats').innerHTML='<div class="row" style="margin-top:12px;gap:8px;text-align:center;"><div style="flex:1;"><div style="font-weight:800;color:var(--g);font-size:18px;">'+avg+'</div><div class="mut">kcal/dia</div></div><div style="flex:1;"><div style="font-weight:800;color:var(--p);font-size:18px;">'+avgP+'g</div><div class="mut">proteína/dia</div></div><div style="flex:1;"><div style="font-weight:800;color:var(--f);font-size:18px;">'+trainDays+'</div><div class="mut">dias de treino</div></div><div style="flex:1;"><div style="font-weight:800;color:#2f9be0;font-size:18px;">'+avgW+'</div><div class="mut">ml água/dia</div></div></div>'+(valid.length?'':'<div class="mut" style="text-align:center;margin-top:8px;">Registre comida durante a semana pra ver seu relatório 📈</div>');
+}
+
+// ===================== RECIPES =====================
+const RECIPES=[
+ {n:'Omelete proteico de claras',tag:'gain',kcal:320,p:34,c:6,f:17,ing:['3 ovos + 2 claras','Tomate e cebola picados','Sal, orégano, pitada de azeite'],m:'Bata os ovos com as claras, tempere. Despeje na frigideira antiaderente quente, adicione os legumes e dobre. ~4 min. Ótimo no café ou pós-treino.'},
+ {n:'Frango com batata-doce',tag:'gain',kcal:480,p:45,c:48,f:9,ing:['180g peito de frango em cubos','200g batata-doce','Brócolis, alho, azeite, ervas'],m:'Asse a batata-doce e o frango temperados (200°C, ~25min). Refogue o brócolis no alho. Prato clássico de quem treina. 💪'},
+ {n:'Bowl de iogurte, aveia e frutas',tag:'maintain',kcal:300,p:18,c:42,f:7,ing:['170g iogurte grego','30g aveia','1 banana ou morangos','Fio de mel'],m:'Monte em camadas no pote: iogurte, aveia, frutas e o mel por cima. Café da manhã rápido e equilibrado.'},
+ {n:'Salada completa de atum',tag:'lose',kcal:260,p:30,c:12,f:9,ing:['1 lata de atum em água','Folhas, tomate, pepino, cenoura','Grão-de-bico, limão, azeite (pouco)'],m:'Misture tudo numa tigela grande, tempere com limão e um fio de azeite. Saciedade alta, poucas calorias.'},
+ {n:'Wrap integral de frango',tag:'maintain',kcal:380,p:32,c:38,f:11,ing:['1 tortilha integral','150g frango desfiado','Alface, tomate, requeijão light'],m:'Aqueça a tortilha, recheie com o frango e os vegetais, enrole. Almoço prático pra levar.'},
+ {n:'Panqueca de banana e aveia',tag:'gain',kcal:340,p:16,c:52,f:8,ing:['1 banana amassada','2 ovos','30g aveia','Canela'],m:'Misture tudo e frite pequenas porções na frigideira antiaderente. Pré-treino delicioso e energético.'},
+ {n:'Sopa de legumes com frango',tag:'lose',kcal:220,p:24,c:18,f:5,ing:['Frango desfiado','Abóbora, cenoura, chuchu, couve','Alho, cebola, temperos'],m:'Cozinhe os legumes, bata parte pra encorpar, junte o frango. Quentinha, leve e satisfatória pro jantar.'},
+ {n:'Overnight oats proteico',tag:'gain',kcal:410,p:30,c:50,f:10,ing:['40g aveia','1 scoop whey','200ml leite','Pasta de amendoim, frutas'],m:'Misture aveia, whey e leite num pote, deixe na geladeira de um dia pro outro. De manhã, finalize com fruta e pasta de amendoim.'},
+ {n:'Escondidinho fit de batata-doce',tag:'maintain',kcal:430,p:35,c:40,f:13,ing:['Purê de batata-doce','Carne moída magra refogada','Queijo cottage por cima'],m:'Monte em camadas: carne, purê, cottage. Leve ao forno ~15min. Conforto sem culpa.'},
+ {n:'Smoothie verde detox-real',tag:'lose',kcal:180,p:6,c:30,f:3,ing:['Couve, 1 maçã, ½ banana','Água de coco','Gengibre, limão'],m:'Bata tudo no liquidificador. Rico em fibras e vitaminas — ótimo lanche leve (sem promessa milagrosa, só comida boa 😉).'},
+];
+let recFilter='all';
+function openRecipes(){ recFilter='all'; const f=document.getElementById('rec-filter'); const opts=[['all','Todas'],['lose','🔻 Emagrecer'],['maintain','⚖️ Manter'],['gain','🔺 Massa']]; f.innerHTML=opts.map(o=>`<div class="opt ${recFilter===o[0]?'sel':''}" onclick="recFilter='${o[0]}';openRecipes()">${o[1]}</div>`).join(''); renderRecipes(); document.getElementById('rec-ov').classList.add('on'); }
+function renderRecipes(){
+  const list=RECIPES.filter(r=>recFilter==='all'||r.tag===recFilter);
+  const tagn={lose:'emagrecer',maintain:'manter',gain:'massa'};
+  document.getElementById('rec-list').innerHTML=list.map((r,i)=>`<div class="rcard" onclick="this.classList.toggle('open')"><div class="rt"><span>${r.n}<span class="tag">${tagn[r.tag]}</span></span></div><div class="rk">${r.kcal} kcal · P${r.p} C${r.c} G${r.f}</div><div class="rbody"><b>Ingredientes:</b><br>${r.ing.map(x=>'• '+x).join('<br>')}<br><br><b>Modo:</b> ${r.m}<br><button class="btn wide" style="margin-top:10px;" onclick="event.stopPropagation();logRecipe(${RECIPES.indexOf(r)})">＋ Registrar no diário</button></div></div>`).join('');
+}
+function logRecipe(i){ const r=RECIPES[i]; const meal=mealByTime(); day().meals[meal].push({name:'🍳 '+r.n,grams:1,kcal:r.kcal,p:r.p,c:r.c,f:r.f}); save(); renderAll(); document.getElementById('rec-ov').classList.remove('on'); go('diario'); }
+
 // ===================== INIT =====================
 function init(){
   if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; renderGoalsOut(); }
-  renderAll(); buildChips();
+  renderAll(); buildChips(); startReminders();
   if(!state.profile){
-    go('ia');
     addMsg('Oi! 🌿 Bem-vindo ao natural.life! Eu sou seu assistente de nutrição e treino.', 'bot');
-    setTimeout(startOnboarding, 500);
+    startOb();
   } else {
-    addMsg('Oi de novo! 🌿 Pode registrar comida ("comi 2 ovos"), treino ("fiz 30min de corrida"), pedir um cardápio, ou tirar qualquer dúvida. 💪','bot');
+    addMsg('Oi de novo! 🌿 Pode registrar comida ("comi 2 ovos"), treino ("fiz 30min de corrida"), pedir um cardápio, uma receita, ou tirar qualquer dúvida. 💪','bot');
   }
 }
 init();

@@ -133,6 +133,22 @@
   body.dark .rcard,body.dark .day-plan{background:#141b12;border-color:#2a3327;}
   body.dark .fr:active{background:#1c241a;} body.dark .sw{background:#3a4435;} body.dark .toggle{border-bottom-color:#26301f;}
   body.dark .tag{background:#26301f;}
+  /* ===== avaliação de saúde + campeonato ===== */
+  .hscore{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:24px;padding:0 6px;border-radius:8px;color:#fff;font-weight:800;font-size:13px;flex:none;}
+  .hdot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none;vertical-align:middle;margin-right:5px;}
+  .champ{background:linear-gradient(135deg,#ff8f00,#f57c00);color:#fff;}
+  .champ .lvl{font-size:13px;font-weight:700;opacity:.95;}
+  .champ .lvlname{font-size:20px;font-weight:800;line-height:1.1;}
+  .champ-bar{height:9px;border-radius:6px;background:rgba(255,255,255,.3);overflow:hidden;margin:8px 0 4px;}
+  .champ-bar>i{display:block;height:100%;background:#fff;border-radius:6px;transition:width .5s;}
+  .tally{display:flex;gap:8px;margin-top:10px;}
+  .tally>div{flex:1;text-align:center;background:rgba(255,255,255,.16);border-radius:12px;padding:7px 4px;font-size:12px;font-weight:700;}
+  .tally .n{font-size:18px;font-weight:800;display:block;}
+  .ladder{display:flex;flex-direction:column;gap:7px;}
+  .ladder .lr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:#f4f8f2;font-size:14px;}
+  body.dark .ladder .lr{background:#141b12;}
+  .ladder .lr.cur{background:#e3f1e0;border:1.5px solid var(--g);font-weight:800;} body.dark .ladder .lr.cur{background:#26301f;}
+  .ladder .lr .em{font-size:22px;}
   /* ===== INTRO / ONBOARDING bonito ===== */
   #intro{position:fixed;inset:0;z-index:56;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 22px calc(26px + env(safe-area-inset-bottom));color:#fff;overflow-y:auto;background:linear-gradient(160deg,#1b5e20,#2e7d32 38%,#43a047 72%,#66bb6a);}
   #intro.on{display:flex;}
@@ -187,6 +203,7 @@
           <div class="macros" id="macros"></div>
         </div>
       </div>
+      <div class="card" id="champ-card" onclick="openRank()" style="cursor:pointer;"></div>
       <div class="card">
         <h2>💧 ÁGUA</h2>
         <div class="water-row" id="water-glasses"></div>
@@ -351,6 +368,14 @@
   <div id="plan-days"></div>
   <ul id="plan-shop" class="shop" style="display:none;"></ul>
   <button class="btn sec wide" style="margin-top:10px;" onclick="document.getElementById('plan-ov').classList.remove('on')">Fechar</button>
+</div></div>
+
+<!-- ranking / campeonato -->
+<div class="ov" id="rank-ov"><div class="ovcard">
+  <h3>🏆 Campeonato saudável</h3>
+  <div class="sub">Ganhe pontos comendo bem! 🟢 Comida verde dá mais pontos · 🔴 vermelha dá menos. Suba de nível!</div>
+  <div id="rank-body"></div>
+  <button class="btn sec wide" style="margin-top:12px;" onclick="document.getElementById('rank-ov').classList.remove('on')">Fechar</button>
 </div></div>
 
 <!-- meal photo -->
@@ -766,6 +791,55 @@ function addExercise(key,min){ const dd=day(); if(!dd.ex)dd.ex=[]; dd.ex.push({n
 function removeExercise(i){ const dd=day(); dd.ex.splice(i,1); save(); renderAll(); }
 function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 
+// ===================== AVALIAÇÃO DE SAÚDE (1=pior 🔴 ... 10=melhor 🟢) =====================
+const JUNK_RE=/(refrigerante|coca|guarana|guaraná|energetico|energético|red bull|monster|bala|chiclete|trident|halls|chocolate|bombom|brigadeiro|sonho de valsa|kitkat|m&m|mms|salgadinho|doritos|cheetos|ruffles|lays|pringles|batata frita|fritas|pizza|hamburguer|hambúrguer|cachorro|hot dog|nuggets|salsicha|mortadela|bacon|linguica|linguiça|calabresa|sorvete|picole|picolé|donut|sonho|cocada|pacoca|paçoca|quindim|beijinho|leite condensado|doce de leite|nutella|panetone|miojo|macarrao instant|maionese|açucar|acucar|achocolatado|nescau|toddy|milkshake|cerveja|vinho|caipi|whisky|vodka|destilado|biscoito reche|negresco|oreo|trakinas|wafer|\bbis\b|churros|marshmallow|pudim|coxinha|pastel|esfiha|kibe|croquete|mascavo|empanado|frito)/;
+const GOOD_RE=/(brocolis|brócolis|alface|rucula|rúcula|espinafre|couve|acelga|escarola|repolho|pepino|abobrinha|berinjela|tomate|cenoura|pimentao|pimentão|vagem|quiabo|chuchu|abobora|abóbora|beterraba|cebola|alho|cogumelo|aspargo|broto|rabanete|maca|maçã|banana|laranja|mamao|mamão|melancia|melao|melão|morango|abacaxi|manga|pera|kiwi|goiaba|uva\b|maracuja|maracujá|acerola|ameixa|caqui|figo|tangerina|limao|limão|frango grelhado|peito de frango|peixe|tilapia|tilápia|salmao|salmão|atum|sardinha|merluza|bacalhau|camarao|camarão|\bovo\b|clara|feijao|feijão|lentilha|grao de bico|grão|ervilha|aveia|quinoa|batata doce|inhame|tofu|iogurte natural|iogurte grego|cottage|ricota|agua de coco|água de coco|chia|linhaca|linhaça)/;
+function healthScore(f,name){
+  const n=norm(name||''); const junk=JUNK_RE.test(n), good=GOOD_RE.test(n); let s=6;
+  if(f){ const kcal=+f.kcal||0,p=+f.p||0,c=+f.c||0,fat=+f.f||0;
+    s+=Math.min(2.5,p/12);
+    if(kcal>250) s-=Math.min(3,(kcal-250)/110);
+    if(!junk){ if(kcal<60) s+=1.2; else if(kcal<120) s+=0.5; }
+    if(fat>20&&p<15) s-=1.2;
+    if(c>45&&p<5&&fat<8) s-=1.6;
+  }
+  if(junk) s-=3.8;
+  if(good) s+=2.4;
+  return Math.max(1,Math.min(10,Math.round(s)));
+}
+function healthColor(s){ return 'hsl('+Math.round((s-1)/9*120)+',68%,42%)'; }
+function healthLabel(s){ return s>=8?'Ótimo':s>=6?'Bom':s>=4?'Moderado':'Evitar'; }
+function healthEmoji(s){ return s>=7?'🟢':s>=4?'🟡':'🔴'; }
+function entryScore(e){ let per; if(e&&e.grams>1){ const k=100/e.grams; per={kcal:(e.kcal||0)*k,p:(e.p||0)*k,c:(e.c||0)*k,f:(e.f||0)*k}; } else per={kcal:e.kcal||0,p:e.p||0,c:e.c||0,f:e.f||0}; return healthScore(per,e?e.name:''); }
+function hbadge(s){ return '<span class="hscore" style="background:'+healthColor(s)+'">'+s+'</span>'; }
+
+// ===================== CAMPEONATO / PONTOS =====================
+const LEVELS=[{p:0,n:'Brotinho',e:'🌱'},{p:60,n:'Iniciante saudável',e:'🥗'},{p:180,n:'Em forma',e:'💪'},{p:450,n:'Atleta',e:'🏅'},{p:900,n:'Mestre da nutrição',e:'🥇'},{p:1800,n:'Lenda fitness',e:'👑'}];
+function allEntries(){ const out=[]; for(const d in state.days){ const m=state.days[d].meals||{}; for(const k in m) for(const it of m[k]) out.push(it); } return out; }
+function totalPoints(){ return allEntries().reduce((a,e)=>a+entryScore(e),0); }
+function dayTally(d){ const m=day(d).meals; let g=0,y=0,r=0,pts=0; for(const k in m) for(const it of m[k]){ const sc=entryScore(it); pts+=sc; if(sc>=7)g++; else if(sc>=4)y++; else r++; } return {g,y,r,pts}; }
+function levelOf(pts){ let lv=LEVELS[0],nx=null; for(let i=0;i<LEVELS.length;i++){ if(pts>=LEVELS[i].p){ lv=LEVELS[i]; nx=LEVELS[i+1]||null; } } return {lv,nx}; }
+function renderChampionship(){
+  const el=document.getElementById('champ-card'); if(!el)return;
+  const pts=totalPoints(); const {lv,nx}=levelOf(pts); const t=dayTally();
+  let prog=100, sub='Nível máximo! 👑';
+  if(nx){ const span=nx.p-lv.p; prog=Math.min(100,Math.round((pts-lv.p)/span*100)); sub='Faltam '+(nx.p-pts)+' pts pro '+nx.e+' '+nx.n; }
+  el.className='card champ';
+  el.innerHTML='<div style="display:flex;align-items:center;gap:12px;"><div style="font-size:40px;">'+lv.e+'</div><div style="flex:1;"><div class="lvl">🏆 CAMPEONATO · '+pts+' pts</div><div class="lvlname">'+lv.n+'</div></div><div style="font-size:11px;opacity:.92;text-align:right;line-height:1.2;">ver<br>ranking ›</div></div>'
+   +'<div class="champ-bar"><i style="width:'+prog+'%"></i></div><div style="font-size:12px;opacity:.95;">'+sub+'</div>'
+   +'<div class="tally"><div><span class="n">'+t.g+'</span>🟢 hoje</div><div><span class="n">'+t.y+'</span>🟡 hoje</div><div><span class="n">'+t.r+'</span>🔴 hoje</div><div><span class="n">+'+t.pts+'</span>pts hoje</div></div>';
+}
+function openRank(){
+  const pts=totalPoints(); const {lv}=levelOf(pts); const t=dayTally();
+  const ladder=LEVELS.map(L=>'<div class="lr '+(L.n===lv.n?'cur':'')+'"><span class="em">'+L.e+'</span><div style="flex:1;"><b>'+L.n+'</b><div class="mut" style="font-size:12px;">'+L.p+'+ pontos</div></div>'+(L.n===lv.n?'<span style="color:var(--g);font-weight:800;">você</span>':'')+'</div>').join('');
+  document.getElementById('rank-body').innerHTML=
+    '<div style="text-align:center;margin:6px 0 14px;"><div style="font-size:48px;">'+lv.e+'</div><div style="font-weight:800;font-size:20px;color:var(--g);">'+lv.n+'</div><div class="mut">'+pts+' pontos no total</div></div>'
+    +'<div class="tally" style="margin-bottom:14px;"><div style="background:#e8f5e9;color:#2e7d32;"><span class="n">'+t.g+'</span>🟢 verdes hoje</div><div style="background:#fff8e1;color:#f57c00;"><span class="n">'+t.y+'</span>🟡 médias</div><div style="background:#ffebee;color:#c62828;"><span class="n">'+t.r+'</span>🔴 evitar</div></div>'
+    +'<div style="font-weight:800;color:var(--g);font-size:14px;margin-bottom:8px;">🏅 NÍVEIS</div><div class="ladder">'+ladder+'</div>'
+    +'<div class="mut" style="font-size:12px;margin-top:12px;">Cada comida registrada vale pontos pela nota de saúde (1 a 10). Coma mais 🟢 verde pra subir mais rápido!</div>';
+  document.getElementById('rank-ov').classList.add('on');
+}
+
 // ===================== GOALS =====================
 function calcGoals(){
   const w=+document.getElementById('i-weight').value, h=+document.getElementById('i-height').value, a=+document.getElementById('i-age').value;
@@ -838,7 +912,7 @@ function renderHoje(){
   wh+=`<button class="btn sec" style="padding:7px 12px;" onclick="addWater(250)">+250ml</button>`;
   document.getElementById('water-glasses').innerHTML=wh;
   document.getElementById('water-txt').textContent=dd.water+' / '+goalW+' ml';
-  renderCoach();
+  renderCoach(); renderChampionship();
 }
 function dayHasActivity(ds){ const d=state.days[ds]; if(!d)return false; const meals=d.meals?Object.values(d.meals).some(a=>a.length):false; return meals||(d.water>0)||(d.ex&&d.ex.length>0); }
 function computeStreak(){ let n=0; const now=new Date(); let start=0; if(!dayHasActivity(todayStr())) start=1; for(let i=start;i<400;i++){ const dt=new Date(now); dt.setDate(now.getDate()-i); if(dayHasActivity(dt.toISOString().slice(0,10))) n++; else break; } return n; }
@@ -908,7 +982,7 @@ function renderDiario(){
   for(const [k,label] of MEALS){
     const items=m[k]; let sub=items.reduce((s,i)=>s+i.kcal,0);
     h+=`<div class="card meal"><div class="mh"><span>${label}</span><span class="mut">${sub} kcal</span></div>`;
-    items.forEach((it,i)=>{ h+=`<div class="fitem"><div><div class="nm">${it.name}</div><div class="mc">${it.grams}g · ${it.kcal}kcal · P${it.p} C${it.c} G${it.f}</div></div><span class="x" onclick="removeEntry('${k}',${i})">✕</span></div>`; });
+    items.forEach((it,i)=>{ const sc=entryScore(it); h+=`<div class="fitem"><div style="display:flex;align-items:center;gap:8px;"><span class="hdot" title="${healthLabel(sc)}" style="background:${healthColor(sc)}"></span><div><div class="nm">${it.name}</div><div class="mc">${it.grams>1?it.grams+'g · ':''}${it.kcal}kcal · P${it.p} C${it.c} G${it.f}</div></div></div><span class="x" onclick="removeEntry('${k}',${i})">✕</span></div>`; });
     h+=`<div class="add" onclick="openFood('${k}')">＋ adicionar</div></div>`;
   }
   document.getElementById('meals').innerHTML=h;
@@ -940,7 +1014,7 @@ function escH(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 function renderFoodList(){
   const raw=document.getElementById('food-search').value; const q=norm(raw); const list=document.getElementById('flist');
   const res=FKEYS.filter(k=>{ if(!q) return true; if(norm(k).includes(q)) return true; return FOODS[k].al&&FOODS[k].al.some(a=>norm(a).includes(q)); }).slice(0,40);
-  const local=res.map(k=>{const f=FOODS[k];return `<div class="fr" onclick="pickFood('${k.replace(/'/g,"\\'")}')"><div><b>${k}</b><div class="fc">por 100g: ${f.kcal}kcal · P${f.p} C${f.c} G${f.f}</div></div><div class="add">＋</div></div>`;}).join('');
+  const local=res.map(k=>{const f=FOODS[k];const sc=healthScore(f,k);return `<div class="fr" onclick="pickFood('${k.replace(/'/g,"\\'")}')"><div style="display:flex;align-items:center;gap:9px;flex:1;">${hbadge(sc)}<div><b>${k}</b><div class="fc">${healthLabel(sc)} · por 100g: ${f.kcal}kcal · P${f.p} C${f.c} G${f.f}</div></div></div><div class="add">＋</div></div>`;}).join('');
   list.innerHTML=local+'<div id="flist-online"></div>';
   if(offTimer) clearTimeout(offTimer);
   const ql=raw.trim();
@@ -955,7 +1029,7 @@ async function onlineFoodSearch(q){
     const prods=(j.products||[]).map(p=>{ const n=p.nutriments||{}; const kcal=Math.round(n['energy-kcal_100g']||0); const nm=(p.product_name_pt||p.product_name||'').trim(); return {name:(nm+(p.brands?(' ('+p.brands.split(',')[0].trim()+')'):'')).slice(0,64), kcal, p:Math.round((n.proteins_100g||0)*10)/10, c:Math.round((n.carbohydrates_100g||0)*10)/10, f:Math.round((n.fat_100g||0)*10)/10}; }).filter(x=>x.name.length>1&&x.kcal>0);
     const seen=new Set(); onlineResults=prods.filter(x=>{const k=x.name.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true;}).slice(0,14);
     if(!onlineResults.length){ box.innerHTML='<div class="mut" style="padding:10px;text-align:center;">Nada mais encontrado na internet pra "'+escH(q)+'".</div>'; return; }
-    box.innerHTML='<div style="font-weight:800;color:var(--g);font-size:12px;padding:12px 4px 4px;">🌐 DA INTERNET (Open Food Facts) — toque pra adicionar</div>'+onlineResults.map((x,i)=>`<div class="fr" onclick="pickOnline(${i})"><div><b>${escH(x.name)}</b><div class="fc">por 100g: ${x.kcal}kcal · P${x.p} C${x.c} G${x.f}</div></div><div class="add">＋</div></div>`).join('');
+    box.innerHTML='<div style="font-weight:800;color:var(--g);font-size:12px;padding:12px 4px 4px;">🌐 DA INTERNET (Open Food Facts) — toque pra adicionar</div>'+onlineResults.map((x,i)=>{const sc=healthScore(x,x.name);return `<div class="fr" onclick="pickOnline(${i})"><div style="display:flex;align-items:center;gap:9px;flex:1;">${hbadge(sc)}<div><b>${escH(x.name)}</b><div class="fc">${healthLabel(sc)} · 100g: ${x.kcal}kcal · P${x.p} C${x.c} G${x.f}</div></div></div><div class="add">＋</div></div>`;}).join('');
   }catch(e){ if(seq===offSeq) box.innerHTML='<div class="mut" style="padding:10px;text-align:center;">🌐 Não consegui buscar online agora — tente de novo em alguns segundos (ou use a lista acima).</div>'; }
 }
 function pickOnline(i){ const x=onlineResults[i]; if(!x)return; const g=(+document.getElementById('food-grams').value||100)/100; day().meals[curMeal].push({name:x.name,grams:Math.round(g*100),kcal:Math.round(x.kcal*g),p:+(x.p*g).toFixed(1),c:+(x.c*g).toFixed(1),f:+(x.f*g).toFixed(1)}); save(); renderAll(); closeFood(); }
@@ -1157,11 +1231,13 @@ function onboardInput(text){
 }
 // ---- exercise logging from text ----
 function tryLogEx(text){ const t=norm(text); if(!/(fiz|treinei|corri|caminh|pedal|nad|joguei|malhei|exerc|treino de)/.test(t)) return null; const key=findEx(t); if(!key) return null; let min=30; let m=t.match(/(\d+)\s*(h|hora)/); if(m){ min=parseInt(m[1])*60; } else { m=t.match(/(\d+)\s*(min|minuto)?/); if(m&&m[1]) min=parseInt(m[1]); } addExercise(key,min); const kc=Math.round(exKcalPerMin(key)*min); const r=todayRemaining(); return '🏋️ Registrei: '+key+' por '+min+' min → 🔥 '+kc+' kcal queimadas!'+(r?(' Agora você pode comer +'+Math.max(0,r.kcal)+' kcal hoje.'):'')+' Mandou bem! 💪'; }
+function tryHealth(text){ const t=norm(text); if(!/(saudavel|saudável|faz mal|pode comer|posso comer|avalia|avaliar|é bom comer|e bom comer|é ruim|nota de saude|nota da|qualidade d|engorda)/.test(t)) return null; const key=findFood(t); if(!key) return null; const sc=healthScore(FOODS[key],key); return healthEmoji(sc)+' '+key+': nota de saúde '+sc+'/10 ('+healthLabel(sc)+').\n'+(sc>=7?'Ótima escolha — pode comer tranquilo! 🟢':sc>=4?'Dá pra comer com moderação. 🟡':'Melhor evitar ou deixar só pra um agrado de vez em quando. 🔴')+'\n\n🏆 Lembra: comer 🟢 verde te dá mais pontos no campeonato saudável!'; }
 function tryRecipe(text){ const t=norm(text); if(!/(receita|recipe|o que cozinhar|me ensina a fazer|prato fit|ideia de prato)/.test(t)) return null; const goal=(state.profile&&state.profile.goal)||'maintain'; let pool=RECIPES.filter(r=>r.tag===goal); if(!pool.length)pool=RECIPES; const r=pool[Math.floor(Math.random()*pool.length)]; return '🍳 RECEITA: '+r.n+' ('+r.kcal+' kcal · P'+r.p+' C'+r.c+' G'+r.f+')\n\nIngredientes:\n'+r.ing.map(x=>'• '+x).join('\n')+'\n\nModo: '+r.m+'\n\n💡 Veja mais em "Diário → 🍳 Receitas saudáveis".'; }
 function assistantAnswer(text){
   const lx=tryLogEx(text); if(lx) return lx;
   const log=tryLog(text); if(log) return log;
   const rc=tryRecipe(text); if(rc) return rc;
+  const hv=tryHealth(text); if(hv) return hv;
   const t=norm(text);
   // sugestão por horário/refeição (ex: "o que comer agora", "comer no almoço")
   if(/(comer|comida|opcao|opç|sugest|lanchar).{0,22}(agora|nesse horario|neste horario|nesse momento)|o que comer agora|comer agora|(comer|comida|opcao|opç|sugest).{0,14}(no |neste |nesse |de |da )?(cafe|café|almoc|almoç|lanche|jantar|manha|manhã)/.test(t)){
@@ -1321,6 +1397,7 @@ const TUTORIAL=[
  {i:'📸',t:'Foto da refeição',d:'Tire uma foto do prato e a IA calcula as calorias e os macros de tudo — sem adicionar item por item.'},
  {i:'🍴',t:'Milhares de alimentos',d:'Busque qualquer comida ou marca (até pela internet) ou escaneie o código de barras do produto.'},
  {i:'🏋️',t:'Treino, metas e progresso',d:'Registre exercícios, acompanhe peso, água, suas metas e o relatório semanal da sua evolução.'},
+ {i:'🏆',t:'Campeonato saudável',d:'Cada comida tem uma nota de 1 a 10: 🟢 verde é saudável, 🔴 vermelho é evitar. Comer verde te dá mais pontos e sobe seu nível. Bora competir com você mesmo!'},
 ];
 function introHTML(html){ document.getElementById('intro-screen').innerHTML=html; }
 function logoBox(){ return '<div class="intro-logo"><img src="icon-180.png" alt="logo" onerror="this.parentNode.textContent=\'🌿\'"></div>'; }

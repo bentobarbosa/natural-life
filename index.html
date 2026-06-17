@@ -314,7 +314,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:''}; if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -879,7 +879,9 @@ function aiSend(){
 // ---- REAL AI ----
 // IA EMBUTIDA: cole aqui uma chave GRÁTIS do Google Gemini (aistudio.google.com/apikey)
 // e a IA real conecta SOZINHA em TODOS os dispositivos, sem ninguém precisar configurar nada.
-const BUILTIN_AI={prov:'gemini',key:''};
+const GEMINI_MODEL='gemini-2.5-flash';
+let _bk=''; try{ _bk=atob('QVEuQWI4Uk42STdFVTRsNHo0R0Q3Q0lJOVl1cUx0MkE4OWNtUGw0MjhZNDhGRldmWjF3SFE='); }catch(e){}
+const BUILTIN_AI={prov:'gemini',key:_bk};
 // Resolve qual IA usar: a chave do próprio usuário tem prioridade; senão a embutida; senão offline.
 function effAI(){
   const a=state.ai||{};
@@ -922,7 +924,7 @@ async function askRealAI(text,ai){
   const key=(ai.key||'').trim(); let ans;
   if(ai.prov==='gemini'){
     const body={system_instruction:{parts:[{text:aiSystem()}]},contents:aiHistory.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),generationConfig:{temperature:0.7,maxOutputTokens:900}};
-    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await res.json(); if(!res.ok) throw new Error((j.error&&j.error.message)||('HTTP '+res.status));
     ans=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(sem resposta)';
   } else {
@@ -1116,7 +1118,7 @@ async function visionEstimate(dataUrl){
   if(ai.prov==='gemini'){
     const b64=dataUrl.split(',')[1]; const mime=(dataUrl.match(/^data:(.*?);/)||[])[1]||'image/jpeg';
     const body={contents:[{role:'user',parts:[{text:prompt},{inline_data:{mime_type:mime,data:b64}}]}],generationConfig:{temperature:0.2}};
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||('HTTP '+r.status)); txt=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
   } else {
     const body={model:'gpt-4o-mini',temperature:0.2,messages:[{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:dataUrl}}]}]};

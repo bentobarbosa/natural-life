@@ -1,0 +1,16 @@
+{
+  "name": "natural.life",
+  "short_name": "natural.life",
+  "description": "Seu nutricionista e personal trainer com IA: calorias, macros, treino, dieta e foto da refeição.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f8f0",
+  "theme_color": "#2e7d32",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "maskable" }
+  ]
+}

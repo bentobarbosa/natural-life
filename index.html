@@ -296,7 +296,13 @@
 <div id="modal"><div class="sheet">
   <h3>Adicionar a <span id="modal-meal">Almoço</span></h3>
   <input id="food-search" placeholder="🔎 Buscar (qualquer marca: pullman, ovomaltine...)" oninput="renderFoodList()">
-  <div class="row" style="margin-top:8px;gap:6px;"><div style="flex:1;"><label>Quantidade (g/ml)</label><input id="food-grams" type="number" inputmode="numeric" value="100"></div><button class="btn btn-bar" onclick="openScanner()" title="Código de barras" style="align-self:flex-end;"><span class="barcode"></span></button><button class="btn" onclick="document.getElementById('meal-photo-input').click()" title="Foto do prato (a IA calcula)" style="align-self:flex-end;font-size:18px;">📷</button><button class="btn sec" onclick="closeFood()" style="align-self:flex-end;">✕</button></div>
+  <div class="row" style="margin-top:8px;gap:6px;align-items:flex-end;">
+    <div style="flex:1;"><label>Quantidade</label><input id="food-grams" type="number" inputmode="decimal" value="100"></div>
+    <div style="flex:1.1;"><label>Medida</label><select id="food-unit"><option value="g">gramas (g)</option><option value="ml">ml</option><option value="fatia">fatias</option><option value="unidade">unidades</option><option value="colher">colheres (15g)</option><option value="copo">copos (200ml)</option><option value="xicara">xícaras (240g)</option><option value="porcao">porções (30g)</option></select></div>
+    <button class="btn btn-bar" onclick="openScanner()" title="Código de barras"><span class="barcode"></span></button>
+    <button class="btn" onclick="document.getElementById('meal-photo-input').click()" title="Foto do prato (a IA calcula)" style="font-size:18px;">📷</button>
+    <button class="btn sec" onclick="closeFood()">✕</button>
+  </div>
   <div class="mut" style="font-size:11px;margin-top:4px;text-align:center;">📷 foto do prato (IA calcula tudo) · <span class="barcode" style="width:18px;height:11px;"></span> código de barras</div>
   <div id="flist"></div>
 </div></div>
@@ -1027,7 +1033,7 @@ function drawChart(){
 
 // ===================== FOOD PICKER =====================
 let curMeal='almoco';
-function openFood(meal){ curMeal=meal; document.getElementById('modal-meal').textContent=(MEALS.find(m=>m[0]===meal)||['','Refeição'])[1].replace(/^\S+\s/,''); document.getElementById('food-search').value=''; document.getElementById('food-grams').value=100; renderFoodList(); document.getElementById('modal').classList.add('on'); }
+function openFood(meal){ curMeal=meal; document.getElementById('modal-meal').textContent=(MEALS.find(m=>m[0]===meal)||['','Refeição'])[1].replace(/^\S+\s/,''); document.getElementById('food-search').value=''; document.getElementById('food-grams').value=100; const us=document.getElementById('food-unit'); if(us)us.value='g'; renderFoodList(); document.getElementById('modal').classList.add('on'); }
 function closeFood(){ document.getElementById('modal').classList.remove('on'); }
 let offTimer=null, offSeq=0, onlineResults=[];
 function escH(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -1052,8 +1058,11 @@ async function onlineFoodSearch(q){
     box.innerHTML='<div style="font-weight:800;color:var(--g);font-size:12px;padding:12px 4px 4px;">🌐 DA INTERNET (Open Food Facts) — toque pra adicionar</div>'+onlineResults.map((x,i)=>{const sc=healthScore(x,x.name);return `<div class="fr" onclick="pickOnline(${i})"><div style="display:flex;align-items:center;gap:9px;flex:1;">${hbadge(sc)}<div><b>${escH(x.name)}</b><div class="fc">${healthLabel(sc)} · 100g: ${x.kcal}kcal · P${x.p} C${x.c} G${x.f}</div></div></div><div class="add">＋</div></div>`;}).join('');
   }catch(e){ if(seq===offSeq) box.innerHTML='<div class="mut" style="padding:10px;text-align:center;">🌐 Não consegui buscar online agora — tente de novo em alguns segundos (ou use a lista acima).</div>'; }
 }
-function pickOnline(i){ const x=onlineResults[i]; if(!x)return; const g=(+document.getElementById('food-grams').value||100)/100; day().meals[curMeal].push({name:x.name,grams:Math.round(g*100),kcal:Math.round(x.kcal*g),p:+(x.p*g).toFixed(1),c:+(x.c*g).toFixed(1),f:+(x.f*g).toFixed(1)}); save(); renderAll(); closeFood(); }
-function pickFood(k){ const f=FOODS[k]; if(f&&f.unit){ openUnitPicker(k); return; } const g=+document.getElementById('food-grams').value||100; addFoodEntry(curMeal,k,g); closeFood(); }
+const UNIT_G={g:1,ml:1,fatia:25,unidade:40,colher:15,copo:200,xicara:240,porcao:30};
+function foodUnitSel(){ const s=document.getElementById('food-unit'); return s?s.value:'g'; }
+function convToGrams(qty,u,food){ if(u==='g'||u==='ml') return qty; if((u==='fatia'||u==='unidade'||u==='porcao')&&food&&food.unit) return qty*food.unit; return qty*(UNIT_G[u]||1); }
+function pickOnline(i){ const x=onlineResults[i]; if(!x)return; const qty=+document.getElementById('food-grams').value||100; const grams=Math.max(1,Math.round(convToGrams(qty,foodUnitSel(),null))); const g=grams/100; day().meals[curMeal].push({name:x.name,grams,kcal:Math.round(x.kcal*g),p:+(x.p*g).toFixed(1),c:+(x.c*g).toFixed(1),f:+(x.f*g).toFixed(1)}); save(); renderAll(); closeFood(); }
+function pickFood(k){ const f=FOODS[k]; const u=foodUnitSel(); if(f&&f.unit&&(u==='g'||u==='ml')){ openUnitPicker(k); return; } const qty=+document.getElementById('food-grams').value||100; const grams=Math.max(1,Math.round(convToGrams(qty,u,f))); addFoodEntry(curMeal,k,grams); closeFood(); }
 function unitLabel(name){ const n=norm(name);
   if(/(pao|pão|fatia|torrada|forma|bisnaguinha|biscoito|bolacha|cracker|wafer|negresco|oreo|trakinas)/.test(n)) return['fatia','fatias'];
   if(/(leite|iogurte|suco|refrigerante|agua|água|cerveja|vinho|cafe|café|vitamina|cappuccino|achocolatado|energetico|energético|guarana|guaraná|milkshake|cha|chá|isotonico|caipi)/.test(n)) return['copo','copos'];

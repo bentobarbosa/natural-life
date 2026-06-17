@@ -124,6 +124,11 @@
   .streak-day.done{opacity:1;} .streak-day.done .c{background:#fff;}
   .streak-day.today .c{box-shadow:0 0 0 2.5px #fff;}
   .streak-tip{font-size:12.5px;line-height:1.4;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:9px 11px;text-align:left;}
+  .seg{display:flex;gap:6px;background:#e8efe6;border-radius:14px;padding:4px;margin-bottom:10px;}
+  body.dark .seg{background:#1a221a;}
+  .seg-btn{flex:1;border:none;background:none;padding:10px 6px;border-radius:11px;font-weight:800;font-size:14px;color:var(--mut);cursor:pointer;}
+  .seg-btn.on{background:#fff;color:var(--g);box-shadow:0 1px 4px rgba(0,0,0,.1);} body.dark .seg-btn.on{background:#26301f;color:#9ad19a;}
+  #v-ia.treino .seg-btn.on{color:#e65100;} body.dark #v-ia.treino .seg-btn.on{color:#ffb74d;}
   .day-plan{border:1px solid #e2eedf;border-radius:14px;padding:10px 12px;margin-bottom:8px;}
   .day-plan h4{color:var(--g);font-size:14px;margin-bottom:4px;} .day-plan .dl{font-size:12px;color:var(--mut);line-height:1.5;}
   .shop li{font-size:13px;padding:3px 0;} .shop{columns:2;list-style:none;}
@@ -268,6 +273,12 @@
 
     <!-- TREINO -->
     <section class="view" id="v-treino">
+      <div class="card" style="background:linear-gradient(135deg,#ef6c00,#f57c00);color:#fff;">
+        <h2 style="color:#fff;">💪 MEU PROGRAMA DE TREINO</h2>
+        <div style="font-size:13px;opacity:.95;margin-bottom:10px;">Seu personal monta um programa completo pro seu objetivo. Onde você treina?</div>
+        <div class="row" style="gap:8px;"><button class="btn" style="flex:1;background:#fff;color:#e65100;" onclick="genWorkout('gym')">🏋️ Academia</button><button class="btn" style="flex:1;background:#fff;color:#e65100;" onclick="genWorkout('home')">🏠 Em casa</button></div>
+      </div>
+      <div class="card" id="workout-prog" style="display:none;"></div>
       <div class="card">
         <h2>🏋️ TREINO DE HOJE</h2>
         <div class="big" id="t-burned" style="color:var(--g);">0 <span style="font-size:15px;">kcal queimadas</span></div>
@@ -285,7 +296,10 @@
 
     <!-- IA -->
     <section class="view" id="v-ia">
-      <div class="card" style="padding:12px 14px;"><h2>🤖 ASSISTENTE NATURAL</h2><div class="mut">Sua IA de nutrição. Pergunte, peça dicas, ou registre comida por texto (ex: "comi 2 ovos e 100g de arroz").</div></div>
+      <div class="seg" id="ai-seg">
+        <button class="seg-btn on" id="seg-nutri" onclick="setAiMode('nutri')">🥗 Nutricionista</button>
+        <button class="seg-btn" id="seg-treino" onclick="setAiMode('treino')">💪 Personal</button>
+      </div>
       <div id="chat"></div>
       <div class="chips" id="ai-chips"></div>
       <div id="ai-input-row"><button id="mic" onclick="toggleMic()" title="Falar">🎤</button><input id="ai-input" placeholder="Pergunte ou registre comida..."><button id="ai-send" onclick="aiSend()">➤</button></div>
@@ -422,7 +436,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; if(s.workout===undefined) s.workout=null; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -883,6 +897,7 @@ function renderTreino(){
   exPreview();
   const e=day().ex||[]; const list=document.getElementById('ex-list');
   list.innerHTML = e.length? e.map((x,i)=>`<div class="fitem"><div><div class="nm">${x.name}</div><div class="mc">${x.min} min · 🔥 ${x.kcal} kcal</div></div><span class="x" onclick="removeExercise(${i})">✕</span></div>`).join('') : '<div class="mut">Nenhum exercício hoje. Bora treinar! 💪</div>';
+  renderWorkout();
 }
 function exPreview(){ const sel=document.getElementById('ex-type'); const min=+document.getElementById('ex-min').value||0; const pv=document.getElementById('ex-preview'); if(!sel||!sel.value||!pv) return; pv.textContent='≈ '+Math.round(exKcalPerMin(sel.value)*min)+' kcal em '+min+' min'; }
 function addExFromForm(){ const sel=document.getElementById('ex-type'); const min=+document.getElementById('ex-min').value; if(!min||min<1){return;} addExercise(sel.value,min); }
@@ -1268,12 +1283,46 @@ function onboardInput(text){
   }
 }
 // ---- exercise logging from text ----
-function tryLogEx(text){ const t=norm(text); if(!/(fiz|treinei|corri|caminh|pedal|nad|joguei|malhei|exerc|treino de)/.test(t)) return null; const key=findEx(t); if(!key) return null; let min=30; let m=t.match(/(\d+)\s*(h|hora)/); if(m){ min=parseInt(m[1])*60; } else { m=t.match(/(\d+)\s*(min|minuto)?/); if(m&&m[1]) min=parseInt(m[1]); } addExercise(key,min); const kc=Math.round(exKcalPerMin(key)*min); const r=todayRemaining(); return '🏋️ Registrei: '+key+' por '+min+' min → 🔥 '+kc+' kcal queimadas!'+(r?(' Agora você pode comer +'+Math.max(0,r.kcal)+' kcal hoje.'):'')+' Mandou bem! 💪'; }
-function tryHealth(text){ const t=norm(text); if(!/(saudavel|saudável|faz mal|pode comer|posso comer|avalia|avaliar|é bom comer|e bom comer|é ruim|nota de saude|nota da|qualidade d|engorda)/.test(t)) return null; const key=findFood(t); if(!key) return null; const sc=healthScore(FOODS[key],key); return healthEmoji(sc)+' '+key+': nota de saúde '+sc+'/100 ('+healthLabel(sc)+').\n'+(sc>=70?'Ótima escolha — pode comer tranquilo! 🟢':sc>=40?'Dá pra comer com moderação. 🟡':'Melhor evitar ou deixar só pra um agrado de vez em quando. 🔴')+'\n\n🏆 Lembra: comer 🟢 verde te dá mais pontos no campeonato saudável!'; }
+function tryLogEx(text){ const t=norm(text);
+  if(/(monte|monta|cria|crie|faca|faça|gera|elabora|me passa|programa|ficha|planilha|que treino|qual treino|quero um treino|preciso de um treino)/.test(t)) return null; // pedido de treino, não registro
+  if(!/(fiz|treinei|corri|caminh|pedal|nad|joguei|malhei|exercitei|me exercitei|terminei o treino|acabei de treinar|fui (a|na|pra) academia)/.test(t)) return null;
+  const key=findEx(t); if(!key) return null; let min=30; let m=t.match(/(\d+)\s*(h|hora)/); if(m){ min=parseInt(m[1])*60; } else { m=t.match(/(\d+)\s*(min|minuto)?/); if(m&&m[1]) min=parseInt(m[1]); } addExercise(key,min); const kc=Math.round(exKcalPerMin(key)*min); const r=todayRemaining(); return '🏋️ Registrei: '+key+' por '+min+' min → 🔥 '+kc+' kcal queimadas!'+(r?(' Agora você pode comer +'+Math.max(0,r.kcal)+' kcal hoje.'):'')+' Mandou bem! 💪'; }
+function tryHealth(text){ const t=norm(text); if(!/(saudavel|saudável|faz mal|pode comer|posso comer|avalia|avaliar|é bom comer|e bom comer|é ruim|nota de saude|nota da|qualidade d|engorda)/.test(t)) return null; const key=findFood(t); if(!key) return null; const sc=healthScore(FOODS[key],key); return healthEmoji(sc)+' '+key+': nota de saúde '+sc+'/100 ('+healthLabel(sc)+').\n'+(sc>=70?'Ótima escolha — pode comer tranquilo! 🟢':sc>=40?'Dá pra comer com moderação. 🟡':'Melhor evitar ou deixar só pra um agrado de vez em quando. 🔴'); }
+// ---- gerador de treino (personal) ----
+const WK={
+ gym:{push:['Supino reto 4x8-10','Supino inclinado com halteres 3x10','Crossover/voador 3x12','Desenvolvimento de ombro 3x10','Elevação lateral 3x12','Tríceps na corda 3x12','Tríceps testa 3x10'],
+   pull:['Puxada frente 4x10','Remada curvada 4x10','Remada baixa 3x12','Rosca direta 3x10','Rosca martelo 3x12','Face pull 3x15'],
+   legs:['Agachamento 4x8-10','Leg press 4x12','Cadeira extensora 3x12','Mesa flexora 3x12','Stiff (posterior) 3x10','Panturrilha 4x15'],
+   full:['Agachamento 3x10','Supino reto 3x10','Remada curvada 3x10','Desenvolvimento 3x12','Levantamento terra 3x8','Prancha 3x40s']},
+ home:{push:['Flexão de braço 4x máx','Flexão inclinada (mãos no sofá) 3x12','Mergulho na cadeira 3x12','Pike push-up (ombro) 3x10','Tríceps no banco 3x15'],
+   pull:['Remada na toalha/mesa 4x12','Remada com mochila 3x12','Superman (lombar) 3x15','Rosca com garrafa/mochila 3x15'],
+   legs:['Agachamento livre 4x15','Afundo/passada 3x12 cada perna','Agachamento búlgaro 3x10','Ponte de glúteo 3x15','Panturrilha em pé 4x20'],
+   full:['Agachamento 3x15','Flexão 3x máx','Afundo 3x12','Prancha 3x40s','Burpee 3x10','Abdominais 3x20']}
+};
+function buildSplit(loc,goal){ const W=WK[loc]||WK.gym; const place=loc==='home'?'em casa':'na academia';
+ if(goal==='gain'||goal==='bulk') return {title:'GANHAR MÚSCULO '+place+' · 4x/semana',days:[['💪 A — Peito/Ombro/Tríceps',W.push],['🔙 B — Costas/Bíceps',W.pull],['🦵 C — Pernas',W.legs],['🔁 D — Corpo todo / pontos fracos',W.full]],note:'Descanse ~48h por grupo muscular. Aumente carga ou repetições quando ficar fácil (sobrecarga progressiva). Durma bem — o músculo cresce no descanso.'};
+ if(goal==='lose') return {title:'EMAGRECER '+place+' · 3-4x/semana',days:[['🔁 A — Corpo todo',W.full],['💪 B — Empurrar (peito/ombro/tríceps)',W.push],['🔙 C — Puxar + pernas',W.pull.slice(0,3).concat(W.legs.slice(0,3))]],note:'Some 20-30min de cardio (caminhada rápida, corrida ou bike) 3x/semana. O treino de força preserva o músculo enquanto você perde gordura. A dieta define o emagrecimento; o treino acelera.'};
+ return {title:'MANTER/DEFINIR '+place+' · 3x/semana',days:[['🔁 A — Corpo todo',W.full],['💪 B — Empurrar',W.push],['🔙 C — Puxar + pernas',W.pull.slice(0,3).concat(W.legs.slice(0,3))]],note:'Treino de força 3x/semana + um pouco de cardio mantém você em forma e saudável. Foque em executar bem e progredir aos poucos.'};
+}
+function workoutPlanText(loc){ const goal=(state.profile&&state.profile.goal)||'maintain'; const sp=buildSplit(loc,goal); let s='🏋️ SEU PROGRAMA DE TREINO\n'+sp.title+'\n\n'; sp.days.forEach(([t,ex])=>{ s+=t+':\n'+ex.map(e=>'  • '+e).join('\n')+'\n\n'; }); s+='📌 '+sp.note+'\n\n🔥 Aquecimento: 5min leve + séries de aproximação. Registre seus treinos na aba 🏋️ Treino!'; return s; }
+function muscleWk(grp,nome,loc){ const W=WK[loc]||WK.gym; return '💪 TREINO DE '+nome.toUpperCase()+' ('+(loc==='home'?'em casa':'academia')+'):\n'+W[grp].map(e=>'  • '+e).join('\n')+'\n\n🔥 Aqueça antes, descanse 60-90s entre séries e capriche na execução!'; }
+function tryWorkout(text){ const t=norm(text); const loc=/(casa|sem equipamento|peso do corpo|calistenia|sem academia)/.test(t)?'home':'gym';
+ if(/peito|peitoral/.test(t)) return muscleWk('push','peito',loc);
+ if(/perna|pernas|quadriceps|gluteo|glúteo|coxa|agachamento/.test(t)&&/treino|exerci|fazer/.test(t)) return muscleWk('legs','pernas',loc);
+ if(/costas|dorsal/.test(t)) return muscleWk('pull','costas',loc);
+ if(/(monte|monta|cria|crie|faca|faça|gera|quero|preciso|me passa|elabora|manda).{0,22}(treino|programa|ficha|planilha|exercicio|musculacao)|programa de treino|ficha de treino|meu treino|monte meu treino|treino pra (mim|hoje)|que treino (fazer|faco|faço)/.test(t)) return workoutPlanText(loc);
+ return null;
+}
+function genWorkout(loc){ state.workout={loc}; save(); renderWorkout(); const el=document.getElementById('workout-prog'); if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function renderWorkout(){ const el=document.getElementById('workout-prog'); if(!el)return; const w=state.workout; if(!w){ el.style.display='none'; return; }
+ const goal=(state.profile&&state.profile.goal)||'maintain'; const sp=buildSplit(w.loc,goal); el.style.display='block';
+ el.innerHTML='<h2>🏋️ '+sp.title+'</h2>'+sp.days.map(d=>'<div class="day-plan"><h4>'+d[0]+'</h4><div class="dl">'+d[1].map(e=>'• '+e).join('<br>')+'</div></div>').join('')+'<div class="mut" style="font-size:12px;margin-top:6px;">📌 '+sp.note+'</div><div class="row" style="margin-top:10px;gap:8px;"><button class="btn sec" style="flex:1;" onclick="genWorkout(\''+(w.loc==='home'?'gym':'home')+'\')">↔️ '+(w.loc==='home'?'Academia':'Em casa')+'</button><button class="btn sec" style="flex:1;" onclick="go(\'ia\');setAiMode(\'treino\')">🤖 Falar com o personal</button></div>';
+}
 function tryRecipe(text){ const t=norm(text); if(!/(receita|recipe|o que cozinhar|me ensina a fazer|prato fit|ideia de prato)/.test(t)) return null; const goal=(state.profile&&state.profile.goal)||'maintain'; let pool=RECIPES.filter(r=>r.tag===goal); if(!pool.length)pool=RECIPES; const r=pool[Math.floor(Math.random()*pool.length)]; return '🍳 RECEITA: '+r.n+' ('+r.kcal+' kcal · P'+r.p+' C'+r.c+' G'+r.f+')\n\nIngredientes:\n'+r.ing.map(x=>'• '+x).join('\n')+'\n\nModo: '+r.m+'\n\n💡 Veja mais em "Diário → 🍳 Receitas saudáveis".'; }
 function assistantAnswer(text){
   const lx=tryLogEx(text); if(lx) return lx;
   const log=tryLog(text); if(log) return log;
+  const wk=tryWorkout(text); if(wk) return wk;
   const rc=tryRecipe(text); if(rc) return rc;
   const hv=tryHealth(text); if(hv) return hv;
   const t=norm(text);
@@ -1356,8 +1405,11 @@ function aiContext(){
   return c;
 }
 function aiSystem(){
+  const persona = aiMode==='treino'
+   ? 'Você é o "Coach Natural", um PERSONAL TRAINER e educador físico de ELITE do app natural.life. Sua especialidade é TREINO: montar programas de treino, ensinar exercícios e técnica correta, séries/repetições, progressão de carga, divisões (ABC, push/pull/legs), treino em casa ou academia, aquecimento, cardio, recuperação e hipertrofia/emagrecimento pelo lado do exercício. Quando pedirem, MONTE um treino concreto (com exercícios, séries x reps).'
+   : 'Você é o "Nutri Natural", uma NUTRICIONISTA de ELITE do app natural.life. Sua especialidade é ALIMENTAÇÃO: montar dietas e cardápios, calorias e macros, escolhas de alimentos, suplementos, hidratação, e hábitos alimentares. Quando pedirem, MONTE uma dieta/cardápio concreto.';
   return [
-   'Você é o "Assistente Natural", a IA do app natural.life. Aja como um especialista de ELITE em nutrição, treino e mudança de hábitos — ao mesmo tempo nutricionista, personal trainer e coach. Sua meta é tirar QUALQUER dúvida do usuário e dar conselhos práticos que realmente funcionam.',
+   persona+' Tire QUALQUER dúvida da sua área e dê conselhos práticos que funcionam. (Se a pergunta for da outra área, ajude mesmo assim e sugira trocar pro outro assistente no topo.)',
    'COMO RESPONDER:',
    '- Sempre em português do Brasil, caloroso, motivador e honesto (sem firula nem promessa milagrosa).',
    '- Vá direto ao ponto, mas seja COMPLETO: explique o "porquê" de forma simples e dê passos ACIONÁVEIS (o que fazer hoje).',
@@ -1389,9 +1441,20 @@ async function askRealAI(text,ai){
   }
   aiHistory.push({role:'assistant',content:ans}); return ans.trim();
 }
-const CHIP_CORE=['💡 Resumo de hoje','🍽️ Monte uma dieta','🍳 Receita fit'];
-const CHIP_POOL=['🥩 Bater proteína','🏋️ Como treinar','🔻 Como emagrecer','🔺 Ganhar massa','😴 Importância do sono','💊 Vale a pena creatina?','⏳ Jejum intermitente','📉 Travei (platô)','🍕 Posso ter refeição livre?','🧠 Como criar disciplina?','🔄 Recomposição corporal','💧 Quanta água beber?','🏠 Treino em casa','📈 Como evoluir no treino?','🥦 Dieta low carb','🍫 Vontade de doce','⚖️ Por que a balança oscila?','🐟 Ômega-3 e magnésio','🌱 Proteína vegetal','☕ Cafeína ajuda no treino?'];
-function buildChips(){ const c=document.getElementById('ai-chips'); if(!c)return; const extra=[...CHIP_POOL].sort(()=>Math.random()-0.5).slice(0,4); const all=[...CHIP_CORE,...extra]; c.innerHTML=all.map(q=>`<span class="pill" onclick="chip('${q.replace(/'/g,"")}')">${q}</span>`).join(''); }
+let aiMode='nutri';
+const CHIPS_NUTRI={core:['💡 Resumo de hoje','🍽️ Monte uma dieta','🍳 Receita fit'],pool:['🥩 Bater proteína','🔻 Como emagrecer','🔺 Ganhar massa','😴 Importância do sono','💊 Vale a pena creatina?','⏳ Jejum intermitente','📉 Travei (platô)','🍕 Posso ter refeição livre?','🧠 Como criar disciplina?','💧 Quanta água beber?','🥦 Dieta low carb','🍫 Vontade de doce','⚖️ Por que a balança oscila?','🐟 Ômega-3 e magnésio','🌱 Proteína vegetal']};
+const CHIPS_TREINO={core:['🏋️ Monte meu treino','🏠 Treino em casa','📈 Como evoluir no treino?'],pool:['💪 Treino de peito','🦵 Treino de pernas','🔙 Treino de costas','🏃 Quanto cardio fazer?','🤸 Aquecimento certo','😴 Quanto descanso?','🔥 Treino pra emagrecer','💥 O que é hipertrofia?','⏱️ Treino rápido (30min)','🧗 Calistenia','☕ Pré-treino natural','📅 Quantos dias treinar?','🦵 Agachamento correto','💢 Dor pós-treino (DOMS)']};
+function buildChips(){ const c=document.getElementById('ai-chips'); if(!c)return; const set=aiMode==='treino'?CHIPS_TREINO:CHIPS_NUTRI; const extra=[...set.pool].sort(()=>Math.random()-0.5).slice(0,4); const all=[...set.core,...extra]; c.innerHTML=all.map(q=>`<span class="pill" onclick="chip('${q.replace(/'/g,"")}')">${q}</span>`).join(''); }
+function setAiMode(m){
+  aiMode=m; aiHistory=[];
+  document.getElementById('seg-nutri').classList.toggle('on',m==='nutri');
+  document.getElementById('seg-treino').classList.toggle('on',m==='treino');
+  document.getElementById('v-ia').classList.toggle('treino',m==='treino');
+  document.getElementById('ai-input').placeholder = m==='treino'?'Pergunte sobre treino ou peça um programa...':'Pergunte ou registre comida...';
+  buildChips();
+  const nm=(state.account&&state.account.name)?(', '+state.account.name.split(' ')[0]):'';
+  addMsg(m==='treino'?('💪 Modo PERSONAL TRAINER ativado'+nm+'! Posso montar seu treino, ensinar exercícios, séries e progressão. Peça "monte meu treino" 🏋️'):('🥗 Modo NUTRICIONISTA'+nm+'! Posso montar sua dieta, calcular macros e tirar dúvidas de alimentação. Peça "monte uma dieta" 🍽️'),'bot');
+}
 function chip(q){ document.getElementById('ai-input').value=q.replace(/^\S+\s/,''); aiSend(); }
 document.getElementById('ai-input').addEventListener('keydown',e=>{ if(e.key==='Enter')aiSend(); });
 ['ex-min','ex-type'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',exPreview); });

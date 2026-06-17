@@ -1053,7 +1053,26 @@ async function onlineFoodSearch(q){
   }catch(e){ if(seq===offSeq) box.innerHTML='<div class="mut" style="padding:10px;text-align:center;">🌐 Não consegui buscar online agora — tente de novo em alguns segundos (ou use a lista acima).</div>'; }
 }
 function pickOnline(i){ const x=onlineResults[i]; if(!x)return; const g=(+document.getElementById('food-grams').value||100)/100; day().meals[curMeal].push({name:x.name,grams:Math.round(g*100),kcal:Math.round(x.kcal*g),p:+(x.p*g).toFixed(1),c:+(x.c*g).toFixed(1),f:+(x.f*g).toFixed(1)}); save(); renderAll(); closeFood(); }
-function pickFood(k){ const g=+document.getElementById('food-grams').value||100; addFoodEntry(curMeal,k,g); closeFood(); }
+function pickFood(k){ const f=FOODS[k]; if(f&&f.unit){ openUnitPicker(k); return; } const g=+document.getElementById('food-grams').value||100; addFoodEntry(curMeal,k,g); closeFood(); }
+function unitLabel(name){ const n=norm(name);
+  if(/(pao|pão|fatia|torrada|forma|bisnaguinha|biscoito|bolacha|cracker|wafer|negresco|oreo|trakinas)/.test(n)) return['fatia','fatias'];
+  if(/(leite|iogurte|suco|refrigerante|agua|água|cerveja|vinho|cafe|café|vitamina|cappuccino|achocolatado|energetico|energético|guarana|guaraná|milkshake|cha|chá|isotonico|caipi)/.test(n)) return['copo','copos'];
+  if(/(azeite|manteiga|pasta|requeijao|requeijão|catupiry|maionese|ketchup|mostarda|shoyu|tahine|geleia|mel|creme de leite|leite condensado|doce de leite)/.test(n)) return['colher','colheres'];
+  if(/(whey|aveia|granola|açucar|açúcar|acucar|adocante|dextrose|albumina|colageno|mucilon|chia|linhaca|linhaça|gergelim|cuscuz|tapioca|farofa)/.test(n)) return['porção','porções'];
+  return['unidade','unidades'];
+}
+function openUnitPicker(k){
+  const f=FOODS[k]; const u=f.unit; const L=unitLabel(k); const sc=healthScore(f,k);
+  let h='<div style="padding:4px 2px 8px;"><div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">'+hbadge(sc)+'<b style="font-size:15px;">'+k+'</b></div>'
+   +'<div class="fc" style="margin-bottom:10px;">1 '+L[0]+' ≈ '+u+'g · '+Math.round(f.kcal*u/100)+'kcal</div>'
+   +'<div class="mut" style="font-size:12px;font-weight:700;margin-bottom:4px;">Quantas '+L[1]+'?</div>';
+  for(let n=1;n<=6;n++){ const g=Math.round(u*n); h+='<div class="fr" onclick="addUnits(\''+k.replace(/'/g,"\\'")+'\','+n+')"><div><b>'+n+' '+(n===1?L[0]:L[1])+'</b><div class="fc">'+g+'g · '+Math.round(f.kcal*g/100)+'kcal · P'+(f.p*g/100).toFixed(0)+'g</div></div><div class="add">＋</div></div>'; }
+  h+='<div class="row" style="margin-top:10px;gap:6px;"><input id="unit-custom" type="number" inputmode="numeric" placeholder="ou digite as gramas (ex: 70)" style="flex:1;"><button class="btn" onclick="addCustomG(\''+k.replace(/'/g,"\\'")+'\')">Add</button></div>'
+   +'<div class="add" style="margin-top:12px;text-align:center;" onclick="renderFoodList()">← voltar à busca</div></div>';
+  document.getElementById('flist').innerHTML=h;
+}
+function addUnits(k,n){ const f=FOODS[k]; if(!f)return; addFoodEntry(curMeal,k,Math.round(f.unit*n)); closeFood(); }
+function addCustomG(k){ const g=+document.getElementById('unit-custom').value; if(!g||g<1){return;} addFoodEntry(curMeal,k,g); closeFood(); }
 
 // ===================== NAV =====================
 function go(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso'){drawChart();renderReport();} if(v==='treino')renderTreino(); document.querySelector('main').scrollTop=0; }

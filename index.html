@@ -169,6 +169,7 @@
     <div><h1>🌿 natural.life</h1><div class="date" id="hdr-date"></div></div>
     <div style="display:flex;align-items:center;gap:4px;">
       <div style="text-align:right;"><div style="font-size:11px;opacity:.85;">META</div><div style="font-size:18px;font-weight:800;" id="hdr-goal">— kcal</div></div>
+      <button class="gear" onclick="openTutor()" title="Como usar o app">❓</button>
       <button class="gear" onclick="openSettings()" title="Configurações">⚙️</button>
     </div>
   </header>
@@ -190,11 +191,6 @@
         <h2>💧 ÁGUA</h2>
         <div class="water-row" id="water-glasses"></div>
         <div class="mut" style="margin-top:8px;" id="water-txt">0 / 0 ml</div>
-      </div>
-      <div class="card" id="photo-card" style="background:linear-gradient(135deg,#7e57c2,#5e35b1);color:#fff;">
-        <h2 style="color:#fff;">📸 FOTO DA REFEIÇÃO</h2>
-        <div style="font-size:13px;opacity:.95;margin-bottom:10px;line-height:1.45;">Tire uma foto do seu prato e a IA calcula as calorias e macros de tudo — sem precisar adicionar item por item! 🤖</div>
-        <button class="btn" style="width:100%;background:#fff;color:#5e35b1;" onclick="photoMeal()">📷 Tirar / enviar foto do prato</button>
       </div>
       <div class="card" id="mealnow-card">
         <h2 id="mealnow-title">🍽️ HORA DO ALMOÇO</h2>
@@ -320,7 +316,7 @@
   <div style="font-weight:800;color:var(--g);font-size:14px;margin:16px 0 2px;">🎨 Aparência & voz</div>
   <div class="toggle"><div><div class="lbl">🌙 Modo escuro</div><div class="d">Tema escuro pro app</div></div><div class="sw" id="sw-dark" onclick="toggleSw('dark')"><i></i></div></div>
   <div class="toggle"><div><div class="lbl">🔊 IA fala as respostas</div><div class="d">Lê as respostas em voz alta</div></div><div class="sw" id="sw-tts" onclick="toggleSw('tts')"><i></i></div></div>
-  <div class="row" style="margin-top:14px;"><button class="btn sec wide" onclick="document.getElementById('set-ov').classList.remove('on');startIntro();">❓ Ver tutorial de novo</button></div>
+  <div class="row" style="margin-top:14px;"><button class="btn sec wide" onclick="openTutor()">❓ Ver tutorial de novo</button></div>
   <div class="row" style="margin-top:16px;gap:8px;">
     <button class="btn sec" onclick="reonboard()" style="flex:1;">✏️ Refazer perfil</button>
     <button class="btn" onclick="saveSettings()" style="flex:1;">Salvar</button>
@@ -1384,14 +1380,18 @@ function introRestore(){
   if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; }
   go('hoje'); go('ia'); addMsg('✅ Conta recuperada! Bem-vindo de volta'+(state.account&&state.account.name?(', '+state.account.name.split(' ')[0]):'')+'! 🌿','bot');
 }
+let tutorMode=false;
+function openTutor(){ tutorMode=true; document.getElementById('set-ov').classList.remove('on'); document.getElementById('intro').classList.add('on'); introTutorial(0); }
+function closeTutor(){ tutorMode=false; document.getElementById('intro').classList.remove('on'); document.getElementById('intro-screen').innerHTML=''; }
+function tutEnd(){ if(tutorMode) closeTutor(); else introToProfile(); }
 function introTutorial(idx){
   idx=Math.max(0,Math.min(TUTORIAL.length-1,idx)); const t=TUTORIAL[idx]; const last=idx===TUTORIAL.length-1;
   introHTML('<div class="intro-tut-ic">'+t.i+'</div>'
     +'<h2>'+t.t+'</h2><div class="tag">'+t.d+'</div>'
     +'<div class="intro-dots">'+TUTORIAL.map((_,i)=>'<i class="'+(i===idx?'on':'')+'"></i>').join('')+'</div>'
     +'<button class="btn-white" onclick="introTutorial('+(idx+1)+')" '+(last?'style="display:none"':'')+'>Próximo →</button>'
-    +(last?'<button class="btn-white" onclick="introToProfile()">Vamos lá! 🚀</button>':'')
-    +'<span class="intro-lk" onclick="introToProfile()">'+(last?'':'pular tutorial')+'</span>');
+    +(last?('<button class="btn-white" onclick="tutEnd()">'+(tutorMode?'Entendi! ✅':'Vamos lá! 🚀')+'</button>'):'')
+    +(last?'':'<span class="intro-lk" onclick="tutEnd()">pular tutorial</span>'));
 }
 function introToProfile(){ document.getElementById('intro-screen').innerHTML=''; startOb(); }
 // ---- backup / restauração ----

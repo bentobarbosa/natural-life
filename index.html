@@ -364,7 +364,13 @@
 <div class="ov" id="plan-ov"><div class="ovcard">
   <h3>📅 Planejador da semana</h3>
   <div class="sub">Um cardápio dos 7 dias feito pro seu objetivo, com lista de compras automática.</div>
-  <div class="row" style="gap:8px;margin-bottom:10px;"><button class="btn" style="flex:1;" onclick="genPlan()">🔄 Gerar / variar</button><button class="btn sec" id="plan-tab-shop" style="flex:1;" onclick="togglePlanView()">🛒 Lista de compras</button></div>
+  <div class="row" style="gap:8px;margin-bottom:8px;"><button class="btn" style="flex:1;" onclick="genPlan()">🔄 Gerar / variar</button><button class="btn sec" id="plan-tab-shop" style="flex:1;" onclick="togglePlanView()">🛒 Lista de compras</button></div>
+  <div style="background:#eef6ec;border-radius:14px;padding:10px 12px;margin-bottom:10px;">
+    <div style="font-weight:700;font-size:13px;color:var(--g);margin-bottom:6px;">🤖 Não gosta de algo? Me fala que eu troco!</div>
+    <div class="row" style="gap:6px;"><input id="plan-chat" placeholder='ex: não gosto de macarrão e peixe' style="flex:1;"><button class="btn" onclick="planChat()">Trocar</button></div>
+    <div id="plan-chat-msg" class="mut" style="font-size:12px;margin-top:6px;"></div>
+    <div id="plan-dislikes" style="margin-top:6px;"></div>
+  </div>
   <div id="plan-days"></div>
   <ul id="plan-shop" class="shop" style="display:none;"></ul>
   <button class="btn sec wide" style="margin-top:10px;" onclick="document.getElementById('plan-ov').classList.remove('on')">Fechar</button>
@@ -408,7 +414,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -791,33 +797,34 @@ function addExercise(key,min){ const dd=day(); if(!dd.ex)dd.ex=[]; dd.ex.push({n
 function removeExercise(i){ const dd=day(); dd.ex.splice(i,1); save(); renderAll(); }
 function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 
-// ===================== AVALIAÇÃO DE SAÚDE (1=pior 🔴 ... 10=melhor 🟢) =====================
+// ===================== AVALIAÇÃO DE SAÚDE (0=pior 🔴 ... 100=melhor 🟢) =====================
 const JUNK_RE=/(refrigerante|coca|guarana|guaraná|energetico|energético|red bull|monster|bala|chiclete|trident|halls|chocolate|bombom|brigadeiro|sonho de valsa|kitkat|m&m|mms|salgadinho|doritos|cheetos|ruffles|lays|pringles|batata frita|fritas|pizza|hamburguer|hambúrguer|cachorro|hot dog|nuggets|salsicha|mortadela|bacon|linguica|linguiça|calabresa|sorvete|picole|picolé|donut|sonho|cocada|pacoca|paçoca|quindim|beijinho|leite condensado|doce de leite|nutella|panetone|miojo|macarrao instant|maionese|açucar|acucar|achocolatado|nescau|toddy|milkshake|cerveja|vinho|caipi|whisky|vodka|destilado|biscoito reche|negresco|oreo|trakinas|wafer|\bbis\b|churros|marshmallow|pudim|coxinha|pastel|esfiha|kibe|croquete|mascavo|empanado|frito)/;
 const GOOD_RE=/(brocolis|brócolis|alface|rucula|rúcula|espinafre|couve|acelga|escarola|repolho|pepino|abobrinha|berinjela|tomate|cenoura|pimentao|pimentão|vagem|quiabo|chuchu|abobora|abóbora|beterraba|cebola|alho|cogumelo|aspargo|broto|rabanete|maca|maçã|banana|laranja|mamao|mamão|melancia|melao|melão|morango|abacaxi|manga|pera|kiwi|goiaba|uva\b|maracuja|maracujá|acerola|ameixa|caqui|figo|tangerina|limao|limão|frango grelhado|peito de frango|peixe|tilapia|tilápia|salmao|salmão|atum|sardinha|merluza|bacalhau|camarao|camarão|\bovo\b|clara|feijao|feijão|lentilha|grao de bico|grão|ervilha|aveia|quinoa|batata doce|inhame|tofu|iogurte natural|iogurte grego|cottage|ricota|agua de coco|água de coco|chia|linhaca|linhaça)/;
 function healthScore(f,name){
-  const n=norm(name||''); const junk=JUNK_RE.test(n), good=GOOD_RE.test(n); let s=6;
+  const n=norm(name||''); const junk=JUNK_RE.test(n), good=GOOD_RE.test(n); let s=60;
   if(f){ const kcal=+f.kcal||0,p=+f.p||0,c=+f.c||0,fat=+f.f||0;
-    s+=Math.min(2.5,p/12);
-    if(kcal>250) s-=Math.min(3,(kcal-250)/110);
-    if(!junk){ if(kcal<60) s+=1.2; else if(kcal<120) s+=0.5; }
-    if(fat>20&&p<15) s-=1.2;
-    if(c>45&&p<5&&fat<8) s-=1.6;
+    s+=Math.min(25,p*1.8);
+    if(kcal>250) s-=Math.min(32,(kcal-250)/8);
+    if(!junk){ if(kcal<60) s+=12; else if(kcal<120) s+=5; }
+    if(fat>20&&p<15) s-=12;
+    if(c>45&&p<5&&fat<8) s-=16;
   }
-  if(junk) s-=3.8;
-  if(good) s+=2.4;
-  return Math.max(1,Math.min(10,Math.round(s)));
+  if(junk) s-=42;
+  if(good) s+=25;
+  return Math.max(0,Math.min(100,Math.round(s)));
 }
-function healthColor(s){ return 'hsl('+Math.round((s-1)/9*120)+',68%,42%)'; }
-function healthLabel(s){ return s>=8?'Ótimo':s>=6?'Bom':s>=4?'Moderado':'Evitar'; }
-function healthEmoji(s){ return s>=7?'🟢':s>=4?'🟡':'🔴'; }
+function healthColor(s){ return 'hsl('+Math.round(s/100*120)+',68%,42%)'; }
+function healthLabel(s){ return s>=80?'Ótimo':s>=60?'Bom':s>=40?'Moderado':'Evitar'; }
+function healthEmoji(s){ return s>=70?'🟢':s>=40?'🟡':'🔴'; }
 function entryScore(e){ let per; if(e&&e.grams>1){ const k=100/e.grams; per={kcal:(e.kcal||0)*k,p:(e.p||0)*k,c:(e.c||0)*k,f:(e.f||0)*k}; } else per={kcal:e.kcal||0,p:e.p||0,c:e.c||0,f:e.f||0}; return healthScore(per,e?e.name:''); }
 function hbadge(s){ return '<span class="hscore" style="background:'+healthColor(s)+'">'+s+'</span>'; }
 
 // ===================== CAMPEONATO / PONTOS =====================
 const LEVELS=[{p:0,n:'Brotinho',e:'🌱'},{p:60,n:'Iniciante saudável',e:'🥗'},{p:180,n:'Em forma',e:'💪'},{p:450,n:'Atleta',e:'🏅'},{p:900,n:'Mestre da nutrição',e:'🥇'},{p:1800,n:'Lenda fitness',e:'👑'}];
 function allEntries(){ const out=[]; for(const d in state.days){ const m=state.days[d].meals||{}; for(const k in m) for(const it of m[k]) out.push(it); } return out; }
-function totalPoints(){ return allEntries().reduce((a,e)=>a+entryScore(e),0); }
-function dayTally(d){ const m=day(d).meals; let g=0,y=0,r=0,pts=0; for(const k in m) for(const it of m[k]){ const sc=entryScore(it); pts+=sc; if(sc>=7)g++; else if(sc>=4)y++; else r++; } return {g,y,r,pts}; }
+function foodPts(sc){ return Math.round(sc/10); }
+function totalPoints(){ return allEntries().reduce((a,e)=>a+foodPts(entryScore(e)),0); }
+function dayTally(d){ const m=day(d).meals; let g=0,y=0,r=0,pts=0; for(const k in m) for(const it of m[k]){ const sc=entryScore(it); pts+=foodPts(sc); if(sc>=70)g++; else if(sc>=40)y++; else r++; } return {g,y,r,pts}; }
 function levelOf(pts){ let lv=LEVELS[0],nx=null; for(let i=0;i<LEVELS.length;i++){ if(pts>=LEVELS[i].p){ lv=LEVELS[i]; nx=LEVELS[i+1]||null; } } return {lv,nx}; }
 function renderChampionship(){
   const el=document.getElementById('champ-card'); if(!el)return;
@@ -836,7 +843,7 @@ function openRank(){
     '<div style="text-align:center;margin:6px 0 14px;"><div style="font-size:48px;">'+lv.e+'</div><div style="font-weight:800;font-size:20px;color:var(--g);">'+lv.n+'</div><div class="mut">'+pts+' pontos no total</div></div>'
     +'<div class="tally" style="margin-bottom:14px;"><div style="background:#e8f5e9;color:#2e7d32;"><span class="n">'+t.g+'</span>🟢 verdes hoje</div><div style="background:#fff8e1;color:#f57c00;"><span class="n">'+t.y+'</span>🟡 médias</div><div style="background:#ffebee;color:#c62828;"><span class="n">'+t.r+'</span>🔴 evitar</div></div>'
     +'<div style="font-weight:800;color:var(--g);font-size:14px;margin-bottom:8px;">🏅 NÍVEIS</div><div class="ladder">'+ladder+'</div>'
-    +'<div class="mut" style="font-size:12px;margin-top:12px;">Cada comida registrada vale pontos pela nota de saúde (1 a 10). Coma mais 🟢 verde pra subir mais rápido!</div>';
+    +'<div class="mut" style="font-size:12px;margin-top:12px;">Cada comida tem uma nota de saúde de 0 a 100 e vale pontos. Coma mais 🟢 verde pra subir mais rápido!</div>';
   document.getElementById('rank-ov').classList.add('on');
 }
 
@@ -946,15 +953,31 @@ function mealSuggestion(meal){
   const picks=ranked.slice(0,3).map(k=>{ const f=FOODS[k]; const g=f.unit||(meal==='lanche'?80:120); return {k,g,kc:Math.round(f.kcal*g/100),p:Math.round(f.p*g/100)}; });
   return picks;
 }
+let pendingAdd=null; // {meal, picks:[{k,g,kc,p}]}
 function mealSuggestText(meal){
   const picks=mealSuggestion(meal); const r=todayRemaining();
-  let s=MEAL_EMOJI[meal]+' Pro seu '+MEAL_LABEL[meal].toLowerCase()+', sugiro:\n';
-  s+=picks.map(p=>'• '+p.g+'g '+p.k+' ('+p.kc+'kcal, '+p.p+'g proteína)').join('\n');
-  const tk=picks.reduce((a,p)=>a+p.kc,0), tp=picks.reduce((a,p)=>a+p.p,0);
-  s+='\n\n≈ '+tk+' kcal e '+tp+'g de proteína.';
-  if(r) s+=' Você ainda tem '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína pra hoje.';
-  s+='\nQuer registrar? Escreva "comi '+picks[0].g+'g '+picks[0].k.split(' ')[0].toLowerCase()+'". 😉';
+  let s=MEAL_EMOJI[meal]+' Pro seu '+MEAL_LABEL[meal].toLowerCase()+', boas opções:\n';
+  s+=picks.map((p,i)=>(i+1)+'. '+p.g+'g '+p.k+' — '+p.kc+'kcal, '+p.p+'g prot · nota '+healthScore(FOODS[p.k],p.k)).join('\n');
+  if(r) s+='\n\nVocê ainda tem '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína hoje.';
+  pendingAdd={meal,picks};
+  s+='\n\n👉 Quer que eu adicione no seu '+MEAL_LABEL[meal].toLowerCase()+'? Responde "sim" (adiciono a 1ª), o número (ex: "2"), "todas" ou "não". 🙂';
   return s;
+}
+function handlePendingAdd(v){
+  const pk=pendingAdd; const t=norm(v);
+  const yes=/(^| )(sim|claro|pode|quero|isso|adiciona|adicione|adicionar|por favor|bora|manda|ok|aceito|quero sim|todas|todos|tudo|as duas|os dois)( |$)|^[123]$|primeir|segund|terceir/.test(t);
+  const no=/(nao|não|deixa|depois|nada|melhor nao|melhor não|talvez nao|agora nao)/.test(t);
+  if(no && !yes){ pendingAdd=null; setTimeout(()=>{ addMsg('Tranquilo, não adicionei nada. Qualquer hora é só pedir! 🙂','bot'); buildChips(); },120); return true; }
+  if(yes){
+    let which=[];
+    if(/todas|todos|tudo|as duas|os dois/.test(t)) which=pk.picks;
+    else { let idx=0; const m=t.match(/[123]/); if(m) idx=+m[0]-1; else if(/segund/.test(t))idx=1; else if(/terceir|tres|três/.test(t))idx=2; which=[pk.picks[idx]||pk.picks[0]]; }
+    which.forEach(p=>{ if(FOODS[p.k]) addFoodEntry(pk.meal,p.k,p.g); });
+    pendingAdd=null;
+    setTimeout(()=>{ addMsg('✅ Adicionei '+which.map(p=>p.g+'g '+p.k).join(' e ')+' no seu '+MEAL_LABEL[pk.meal].toLowerCase()+'! Mandou bem. 💪','bot'); renderHoje(); buildChips(); },120);
+    return true;
+  }
+  pendingAdd=null; return false; // não era resposta de sim/não → segue fluxo normal
 }
 function renderMealNow(){
   const card=document.getElementById('mealnow-card'); if(!card)return;
@@ -970,11 +993,8 @@ function renderMealNow(){
 }
 function askMealNow(meal){
   go('ia');
-  const r=todayRemaining(); const eaten=day().meals[meal]||[];
-  let q='O que é uma boa opção pra eu comer agora no '+MEAL_LABEL[meal].toLowerCase()+'?';
-  if(eaten.length) q+=' Já comi '+eaten.map(i=>i.name).join(', ')+' nessa refeição.';
-  if(r) q+=' Hoje ainda tenho '+Math.max(0,r.kcal)+' kcal e '+Math.max(0,r.p).toFixed(0)+'g de proteína disponíveis.';
-  document.getElementById('ai-input').value=q; aiSend();
+  addMsg('O que comer agora no '+MEAL_LABEL[meal].toLowerCase()+'?','me');
+  setTimeout(()=>{ addMsg(mealSuggestText(meal),'bot'); document.querySelector('main').scrollTop=1e9; buildChips(); },160);
 }
 function renderDiario(){
   document.getElementById('diario-date').textContent=fmtDate(todayStr());
@@ -1144,7 +1164,9 @@ function suggestFor(macro){
 // natural language food logging
 function tryLog(text){
   const t=norm(text);
-  if(!/(comi|comer|adicion|registr|tomei|bebi|add|coloca)/.test(t)) return null;
+  // não registra PERGUNTAS (ex: "o que comer?", "posso comer X?") — só frases de registro
+  if(/\?/.test(text) || /^(o que|oque|qual|quais|quanto|quando|como|por que|porque|pq|sera|será|vale|posso|devo|pode|quer|me sugere|sugest|recomenda|monta|monte|faz mal|e bom|é bom|e saudavel|é saudável)/.test(t)) return null;
+  if(!/^(comi|comer|adicion|registr|tomei|bebi|coloca|add)/.test(t) && !/(comi|tomei|bebi|registrei|adicionei) /.test(t)) return null;
   // split by " e " and commas to handle multiple foods
   const parts=text.split(/,| e | mais /i);
   let logged=[]; const meal=mealByTime();
@@ -1231,7 +1253,7 @@ function onboardInput(text){
 }
 // ---- exercise logging from text ----
 function tryLogEx(text){ const t=norm(text); if(!/(fiz|treinei|corri|caminh|pedal|nad|joguei|malhei|exerc|treino de)/.test(t)) return null; const key=findEx(t); if(!key) return null; let min=30; let m=t.match(/(\d+)\s*(h|hora)/); if(m){ min=parseInt(m[1])*60; } else { m=t.match(/(\d+)\s*(min|minuto)?/); if(m&&m[1]) min=parseInt(m[1]); } addExercise(key,min); const kc=Math.round(exKcalPerMin(key)*min); const r=todayRemaining(); return '🏋️ Registrei: '+key+' por '+min+' min → 🔥 '+kc+' kcal queimadas!'+(r?(' Agora você pode comer +'+Math.max(0,r.kcal)+' kcal hoje.'):'')+' Mandou bem! 💪'; }
-function tryHealth(text){ const t=norm(text); if(!/(saudavel|saudável|faz mal|pode comer|posso comer|avalia|avaliar|é bom comer|e bom comer|é ruim|nota de saude|nota da|qualidade d|engorda)/.test(t)) return null; const key=findFood(t); if(!key) return null; const sc=healthScore(FOODS[key],key); return healthEmoji(sc)+' '+key+': nota de saúde '+sc+'/10 ('+healthLabel(sc)+').\n'+(sc>=7?'Ótima escolha — pode comer tranquilo! 🟢':sc>=4?'Dá pra comer com moderação. 🟡':'Melhor evitar ou deixar só pra um agrado de vez em quando. 🔴')+'\n\n🏆 Lembra: comer 🟢 verde te dá mais pontos no campeonato saudável!'; }
+function tryHealth(text){ const t=norm(text); if(!/(saudavel|saudável|faz mal|pode comer|posso comer|avalia|avaliar|é bom comer|e bom comer|é ruim|nota de saude|nota da|qualidade d|engorda)/.test(t)) return null; const key=findFood(t); if(!key) return null; const sc=healthScore(FOODS[key],key); return healthEmoji(sc)+' '+key+': nota de saúde '+sc+'/100 ('+healthLabel(sc)+').\n'+(sc>=70?'Ótima escolha — pode comer tranquilo! 🟢':sc>=40?'Dá pra comer com moderação. 🟡':'Melhor evitar ou deixar só pra um agrado de vez em quando. 🔴')+'\n\n🏆 Lembra: comer 🟢 verde te dá mais pontos no campeonato saudável!'; }
 function tryRecipe(text){ const t=norm(text); if(!/(receita|recipe|o que cozinhar|me ensina a fazer|prato fit|ideia de prato)/.test(t)) return null; const goal=(state.profile&&state.profile.goal)||'maintain'; let pool=RECIPES.filter(r=>r.tag===goal); if(!pool.length)pool=RECIPES; const r=pool[Math.floor(Math.random()*pool.length)]; return '🍳 RECEITA: '+r.n+' ('+r.kcal+' kcal · P'+r.p+' C'+r.c+' G'+r.f+')\n\nIngredientes:\n'+r.ing.map(x=>'• '+x).join('\n')+'\n\nModo: '+r.m+'\n\n💡 Veja mais em "Diário → 🍳 Receitas saudáveis".'; }
 function assistantAnswer(text){
   const lx=tryLogEx(text); if(lx) return lx;
@@ -1279,6 +1301,7 @@ function speak(text){ try{ if(!state.settings.tts||!('speechSynthesis'in window)
 function aiSend(){
   const inp=document.getElementById('ai-input'); const v=inp.value.trim(); if(!v)return; addMsg(v,'me'); inp.value='';
   if(onboard){ setTimeout(()=>onboardInput(v),150); return; }
+  if(pendingAdd && handlePendingAdd(v)){ return; }
   // logging always handled locally (fast + reliable), even with real AI
   const quick=tryLogEx(v)||tryLog(v);
   if(quick){ setTimeout(()=>{ addMsg(quick,'bot'); renderHoje(); },150); return; }
@@ -1397,7 +1420,7 @@ const TUTORIAL=[
  {i:'📸',t:'Foto da refeição',d:'Tire uma foto do prato e a IA calcula as calorias e os macros de tudo — sem adicionar item por item.'},
  {i:'🍴',t:'Milhares de alimentos',d:'Busque qualquer comida ou marca (até pela internet) ou escaneie o código de barras do produto.'},
  {i:'🏋️',t:'Treino, metas e progresso',d:'Registre exercícios, acompanhe peso, água, suas metas e o relatório semanal da sua evolução.'},
- {i:'🏆',t:'Campeonato saudável',d:'Cada comida tem uma nota de 1 a 10: 🟢 verde é saudável, 🔴 vermelho é evitar. Comer verde te dá mais pontos e sobe seu nível. Bora competir com você mesmo!'},
+ {i:'🏆',t:'Campeonato saudável',d:'Cada comida tem uma nota de 0 a 100: 🟢 verde é saudável, 🔴 vermelho é evitar. Comer verde te dá mais pontos e sobe seu nível. Bora competir com você mesmo!'},
 ];
 function introHTML(html){ document.getElementById('intro-screen').innerHTML=html; }
 function logoBox(){ return '<div class="intro-logo"><img src="icon-180.png" alt="logo" onerror="this.parentNode.textContent=\'🌿\'"></div>'; }
@@ -1676,8 +1699,33 @@ const PLAN_BANK={
    jantar:[[['Batata doce',150],['Tilápia / peixe',150],['Alface',60],['Tomate',100]],[['Arroz integral cozido',120],['Frango grelhado (peito)',150],['Brócolis',100]],[['Sopa']],[['Ovo',150],['Abóbora',150],['Brócolis',100],['Azeite de oliva',8]]]}
 };
 const WEEKDAYS=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+const SUBS={
+ protein:['Frango grelhado (peito)','Carne bovina (patinho)','Tilápia / peixe','Ovo','Atum (lata, em água)','Tofu','Iogurte grego','Queijo cottage','Sardinha'],
+ carb:['Arroz integral cozido','Arroz branco cozido','Batata doce','Quinoa cozida','Aveia','Tapioca','Pão integral (fatia)','Macarrão cozido','Cuscuz','Inhame','Mandioca / macaxeira'],
+ veg:['Brócolis','Alface','Cenoura','Tomate','Abóbora','Couve','Espinafre','Abobrinha','Beterraba','Pepino'],
+ fruit:['Banana','Maçã','Mamão','Morango','Laranja','Manga','Abacaxi','Pera','Melão','Uva'],
+ fat:['Azeite de oliva','Castanhas / nozes','Pasta de amendoim','Abacate'],
+ dairy:['Iogurte natural','Leite desnatado','Iogurte grego','Queijo cottage'],
+};
+function foodCategory(name){ const f=FOODS[name]; const n=norm(name); for(const cat in SUBS){ if(SUBS[cat].some(x=>norm(x)===n)) return cat; } if(f){ if(f.p>=12&&f.c<15)return'protein'; if(f.c>=18&&f.p<8)return'carb'; if(f.f>=15&&f.p<10)return'fat'; if(f.kcal<60)return'veg'; } return 'carb'; }
+const DISLIKE_SYN={peixe:['peixe','salmao','atum','sardinha','tilapia','merluza','bacalhau','camarao','polvo','lula'],carne:['carne','bife','patinho','picanha','file','costela','cordeiro','contrafile','maminha','alcatra','moida','porco','lombo'],frango:['frango','coxa','sobrecoxa','asa de frango']};
+function dislikeMatches(d,n){ if(n.includes(d)) return true; for(const g in DISLIKE_SYN){ const arr=DISLIKE_SYN[g]; if(arr.includes(d)||d===g) return arr.some(s=>n.includes(s)); } return false; }
+function isDisliked(name){ const n=norm(name); return (state.dislikes||[]).some(d=>dislikeMatches(d,n)); }
+function substitute(name){ const cat=foodCategory(name); const opts=(SUBS[cat]||[]).filter(x=>FOODS[x]&&!isDisliked(x)&&norm(x)!==norm(name)); return opts.length?opts[Math.floor(Math.random()*opts.length)]:null; }
+function planChat(){
+  const inp=document.getElementById('plan-chat'); const v=(inp.value||'').trim(); const msg=document.getElementById('plan-chat-msg'); if(!v)return;
+  const filler=/\b(nao|n|gosto|gostei|gostar|de|do|da|odeio|detesto|tira|tirar|tire|sem|remove|remover|troca|trocar|troque|favor|por|comer|nem|ou|nenhum|nada|quero|prefiro|muito|tao|enjoei|adoro|odiei)\b/g;
+  const added=[];
+  v.split(/,| e | nem | ou |;|\.| mais /i).forEach(seg=>{ let c=norm(seg).replace(filler,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); if(c.length>=3 && !state.dislikes.includes(c)){ state.dislikes.push(c); added.push(c); } });
+  if(!added.length){ msg.textContent='🤔 Me diz qual comida, ex: "não gosto de macarrão".'; return; }
+  save(); inp.value=''; genPlan();
+  msg.textContent='✅ Beleza! Vou evitar: '+added.map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join(', ')+'. Refiz o cardápio com outras opções! 🤖';
+  renderDislikes();
+}
+function renderDislikes(){ const el=document.getElementById('plan-dislikes'); if(!el)return; el.innerHTML=(state.dislikes||[]).length?('<span class="mut" style="font-size:11px;">Evitando: </span>'+state.dislikes.map((d,i)=>'<span class="pill" style="cursor:pointer;" onclick="rmDislike('+i+')">🚫 '+d+' ✕</span>').join('')):''; }
+function rmDislike(i){ state.dislikes.splice(i,1); save(); genPlan(); renderDislikes(); const m=document.getElementById('plan-chat-msg'); if(m)m.textContent='Voltei a incluir. Cardápio atualizado! 🙂'; }
 let weekPlan=null,planView='days';
-function openPlanner(){ if(!weekPlan) genPlan(); else { renderPlan(); document.getElementById('plan-ov').classList.add('on'); } document.getElementById('plan-ov').classList.add('on'); }
+function openPlanner(){ if(!weekPlan) genPlan(); else { renderPlan(); document.getElementById('plan-ov').classList.add('on'); } document.getElementById('plan-ov').classList.add('on'); renderDislikes(); }
 function genPlan(){
   let goal=(state.profile&&state.profile.goal)||'maintain'; goal={recomp:'lose',bulk:'gain'}[goal]||goal; const bank=PLAN_BANK[goal]||PLAN_BANK.maintain;
   const g=state.goals; const target=g?g.kcal:2000;
@@ -1685,13 +1733,13 @@ function genPlan(){
   weekPlan=WEEKDAYS.map((dn,i)=>{
     const meals=[['☕ Café',pick(bank.cafe,i)],['🍽️ Almoço',pick(bank.almoco,i+1)],['🍎 Lanche',pick(bank.lanche,i)],['🌙 Jantar',pick(bank.jantar,i+2)]];
     // raw items (base grams); separate fixed-kcal items (sopa)
-    let raw=[]; meals.forEach(([ml,arr])=>{ arr.forEach(it=>{ if(it[0]==='Sopa'){raw.push({ml,name:'Sopa de legumes com frango',g:1,kc:220,fix:true});return;} const f=FOODS[it[0]]; if(!f)return; raw.push({ml,name:it[0],g:it[1],kc:f.kcal*it[1]/100,fix:false}); }); });
+    let raw=[]; meals.forEach(([ml,arr])=>{ arr.forEach(it=>{ if(it[0]==='Sopa'){raw.push({ml,name:'Sopa de legumes com frango',g:1,kc:220,fix:true});return;} let fname=it[0]; if(isDisliked(fname)){ const sub=substitute(fname); if(sub) fname=sub; } const f=FOODS[fname]; if(!f)return; raw.push({ml,name:fname,g:it[1],kc:f.kcal*it[1]/100,fix:false}); }); });
     const rawTotal=raw.reduce((s,it)=>s+it.kc,0)||1;
     let factor=target/rawTotal; factor=Math.max(0.6,Math.min(2.4,factor));
     const items=raw.map(it=>{ if(it.fix) return [it.ml,it.name,1,it.kc]; const grams=Math.max(10,Math.round(it.g*factor/5)*5); return [it.ml,it.name,grams,Math.round(FOODS[it.name].kcal*grams/100)]; });
     return {day:dn,items};
   });
-  planView='days'; renderPlan(); document.getElementById('plan-ov').classList.add('on');
+  planView='days'; renderPlan(); renderDislikes(); document.getElementById('plan-ov').classList.add('on');
 }
 function renderPlan(){
   document.getElementById('plan-tab-shop').textContent = planView==='days'?'🛒 Lista de compras':'📅 Ver cardápio';

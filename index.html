@@ -245,7 +245,7 @@
 <!-- food picker -->
 <div id="modal"><div class="sheet">
   <h3>Adicionar a <span id="modal-meal">Almoço</span></h3>
-  <input id="food-search" placeholder="🔎 Buscar alimento (ex: frango, arroz, banana)" oninput="renderFoodList()">
+  <input id="food-search" placeholder="🔎 Buscar (qualquer marca: pullman, ovomaltine...)" oninput="renderFoodList()">
   <div class="row" style="margin-top:8px;gap:6px;"><div style="flex:1;"><label>Quantidade (g/ml)</label><input id="food-grams" type="number" inputmode="numeric" value="100"></div><button class="btn btn-bar" onclick="openScanner()" title="Código de barras" style="align-self:flex-end;"><span class="barcode"></span></button><button class="btn" onclick="document.getElementById('meal-photo-input').click()" title="Foto do prato (a IA calcula)" style="align-self:flex-end;font-size:18px;">📷</button><button class="btn sec" onclick="closeFood()" style="align-self:flex-end;">✕</button></div>
   <div class="mut" style="font-size:11px;margin-top:4px;text-align:center;">📷 foto do prato (IA calcula tudo) · <span class="barcode" style="width:18px;height:11px;"></span> código de barras</div>
   <div id="flist"></div>
@@ -624,6 +624,40 @@ const FOODS={
  'Adoçante':{kcal:0,p:0,c:0,f:0,unit:1,al:['adocante','adoçante','stevia','sucralose']},
  'Tahine / pasta de gergelim':{kcal:595,p:17,c:21,f:54,unit:15,al:['tahine','tahini','pasta de gergelim']},
  'Homus':{kcal:177,p:5,c:20,f:8,unit:30,al:['homus','hummus','hommus']},
+ // ---- marcas / produtos da vida real ----
+ 'Pão de forma Pullman/Panco':{kcal:253,p:9,c:48,f:3.4,unit:25,al:['pao de forma pullman','panco','pullman','pao panco','pao de forma branco panco']},
+ 'Nutella / creme de avelã':{kcal:539,p:6.3,c:57,f:31,unit:15,al:['nutella','creme de avela','avela','avelã']},
+ 'Ovomaltine (achocolatado)':{kcal:377,p:6,c:84,f:3,unit:20,al:['ovomaltine','ovomaltine']},
+ 'Barra de proteína Ovomaltine':{kcal:389,p:20,c:50,f:11,unit:35,al:['barra ovomaltine','barra de proteina ovomaltine','barra de cereal ovomaltine','bold ovomaltine']},
+ 'Leite Ninho (pó)':{kcal:495,p:26,c:38,f:27,unit:13,al:['leite ninho','ninho','leite em po','leite em pó']},
+ 'Miojo / macarrão instantâneo':{kcal:436,p:9,c:60,f:17,unit:80,al:['miojo','macarrao instantaneo','nissin','lamen','lámen','cup noodles','macarrao instantâneo']},
+ 'Salgadinho de milho (Doritos/Cheetos)':{kcal:498,p:7,c:62,f:25,unit:30,al:['doritos','cheetos','fandangos','salgadinho','fofura']},
+ 'Batata chips (Ruffles/Lays/Pringles)':{kcal:536,p:6,c:53,f:34,unit:30,al:['ruffles','lays','pringles','batata chips','chips']},
+ 'Chocolate wafer (Bis/Bono)':{kcal:520,p:6,c:64,f:27,unit:7,al:['bis','bono','wafer','chocolate wafer']},
+ 'Biscoito Negresco/Oreo':{kcal:484,p:6,c:70,f:20,unit:9,al:['negresco','oreo','biscoito preto']},
+ 'Trakinas/Passatempo':{kcal:470,p:6,c:68,f:19,unit:10,al:['trakinas','passatempo','recheado leite']},
+ 'Chiclete / Trident':{kcal:160,p:0,c:62,f:0,unit:2,al:['chiclete','trident','goma de mascar','clorets']},
+ 'Bala de menta / Halls':{kcal:380,p:0,c:95,f:0,unit:3,al:['halls','bala de menta','drops','mentos']},
+ 'Requeijão Catupiry':{kcal:257,p:10,c:3,f:23,unit:30,al:['catupiry','requeijao cremoso','requeijão cremoso']},
+ 'Iogurte Activia':{kcal:71,p:3.8,c:13,f:1.5,unit:100,al:['activia','iogurte activia']},
+ 'Iogurte proteico (YoPro/Whey)':{kcal:55,p:10,c:4,f:0.4,unit:250,al:['yopro','yo pro','iogurte proteico','whey iogurte','protein yogurt']},
+ 'Mucilon / cereal infantil':{kcal:410,p:8,c:80,f:5,unit:30,al:['mucilon','neston','cereal infantil','farinha lactea','farinha láctea']},
+ 'Panetone / chocotone':{kcal:333,p:5,c:55,f:10,unit:80,al:['panetone','chocotone']},
+ 'Açaí na tigela (com granola)':{kcal:150,p:2,c:28,f:4,unit:300,al:['acai na tigela','acai com granola','tigela de acai','açaí na tigela']},
+ 'Pamonha':{kcal:170,p:3,c:30,f:5,unit:150,al:['pamonha']},
+ 'Curau / canjica cremosa':{kcal:110,p:2.5,c:20,f:2.5,unit:150,al:['curau','canjica cremosa']},
+ 'Pão de mel':{kcal:360,p:4,c:62,f:10,unit:40,al:['pao de mel','pão de mel']},
+ 'Sonho de valsa / bombom':{kcal:530,p:6,c:58,f:30,unit:22,al:['sonho de valsa','ouro branco','bombom recheado']},
+ 'KitKat / chocolate wafer':{kcal:518,p:6,c:60,f:27,unit:42,al:['kitkat','kit kat']},
+ 'M&Ms / confeito':{kcal:492,p:4.6,c:71,f:21,unit:45,al:['mms','m&ms','confeito','chocolate confeitado']},
+ 'Suco de caixinha (Del Valle/Ades)':{kcal:48,p:0.3,c:11,f:0.1,unit:200,al:['suco de caixinha','del valle','ades','suco pronto','sufresh']},
+ 'Energético (Red Bull/Monster)':{kcal:45,p:0,c:11,f:0,unit:250,al:['red bull','monster','tnt','baly','fusion']},
+ 'Pão de hot dog / bisnaguinha':{kcal:280,p:8,c:50,f:5,unit:40,al:['bisnaguinha','pao de hot dog','pão de hot dog','bisnaga']},
+ 'Macarrão instantâneo (preparado)':{kcal:188,p:4,c:25,f:8,unit:250,al:['miojo pronto','macarrao pronto','lamen pronto']},
+ 'Salsicha hot dog (lanche completo)':{kcal:240,p:9,c:28,f:11,unit:160,al:['hot dog completo','dogao','dogão','lanche de salsicha']},
+ 'Tapioca com queijo/coco':{kcal:240,p:6,c:36,f:8,unit:120,al:['tapioca com queijo','tapioca de coco','tapioca doce']},
+ 'Crepe / cuscuz nordestino':{kcal:113,p:3,c:24,f:0.5,unit:150,al:['cuscuz nordestino','cuscuz de milho']},
+ 'Vitamina de frutas (com leite)':{kcal:90,p:3,c:15,f:2,unit:300,al:['vitamina de banana','vitamina de frutas','batida de frutas']},
 };
 const FKEYS=Object.keys(FOODS).sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
 function findFood(q){ q=norm(q); for(const k of FKEYS){ if(norm(k).includes(q)) return k; const f=FOODS[k]; if(f.al) for(const a of f.al) if(norm(a)===q||q.includes(norm(a))) return k; } return null; }
@@ -851,11 +885,30 @@ function drawChart(){
 let curMeal='almoco';
 function openFood(meal){ curMeal=meal; document.getElementById('modal-meal').textContent=(MEALS.find(m=>m[0]===meal)||['','Refeição'])[1].replace(/^\S+\s/,''); document.getElementById('food-search').value=''; document.getElementById('food-grams').value=100; renderFoodList(); document.getElementById('modal').classList.add('on'); }
 function closeFood(){ document.getElementById('modal').classList.remove('on'); }
+let offTimer=null, offSeq=0, onlineResults=[];
+function escH(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function renderFoodList(){
-  const q=norm(document.getElementById('food-search').value); const list=document.getElementById('flist');
+  const raw=document.getElementById('food-search').value; const q=norm(raw); const list=document.getElementById('flist');
   const res=FKEYS.filter(k=>{ if(!q) return true; if(norm(k).includes(q)) return true; return FOODS[k].al&&FOODS[k].al.some(a=>norm(a).includes(q)); }).slice(0,40);
-  list.innerHTML=res.map(k=>{const f=FOODS[k];return `<div class="fr" onclick="pickFood('${k.replace(/'/g,"\\'")}')"><div><b>${k}</b><div class="fc">por 100g: ${f.kcal}kcal · P${f.p} C${f.c} G${f.f}</div></div><div class="add">＋</div></div>`;}).join('')||'<div class="mut" style="padding:14px;text-align:center;">Nada encontrado 🤔</div>';
+  const local=res.map(k=>{const f=FOODS[k];return `<div class="fr" onclick="pickFood('${k.replace(/'/g,"\\'")}')"><div><b>${k}</b><div class="fc">por 100g: ${f.kcal}kcal · P${f.p} C${f.c} G${f.f}</div></div><div class="add">＋</div></div>`;}).join('');
+  list.innerHTML=local+'<div id="flist-online"></div>';
+  if(offTimer) clearTimeout(offTimer);
+  const ql=raw.trim();
+  if(ql.length>=3){ document.getElementById('flist-online').innerHTML='<div class="mut" style="padding:10px;text-align:center;">🌐 Buscando mais "'+escH(ql)+'" na internet…</div>'; offTimer=setTimeout(()=>onlineFoodSearch(ql),650); }
+  else if(!res.length){ list.innerHTML='<div class="mut" style="padding:14px;text-align:center;">Digite o nome do alimento (ex: pullman, ovomaltine, kibe)… 🔎</div>'; }
 }
+async function onlineFoodSearch(q){
+  const box=document.getElementById('flist-online'); if(!box) return; const seq=++offSeq;
+  try{
+    const r=await fetch('https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,product_name_pt,brands,nutriments');
+    const j=await r.json(); if(seq!==offSeq) return;
+    const prods=(j.products||[]).map(p=>{ const n=p.nutriments||{}; const kcal=Math.round(n['energy-kcal_100g']||0); const nm=(p.product_name_pt||p.product_name||'').trim(); return {name:(nm+(p.brands?(' ('+p.brands.split(',')[0].trim()+')'):'')).slice(0,64), kcal, p:Math.round((n.proteins_100g||0)*10)/10, c:Math.round((n.carbohydrates_100g||0)*10)/10, f:Math.round((n.fat_100g||0)*10)/10}; }).filter(x=>x.name.length>1&&x.kcal>0);
+    const seen=new Set(); onlineResults=prods.filter(x=>{const k=x.name.toLowerCase(); if(seen.has(k))return false; seen.add(k); return true;}).slice(0,14);
+    if(!onlineResults.length){ box.innerHTML='<div class="mut" style="padding:10px;text-align:center;">Nada mais encontrado na internet pra "'+escH(q)+'".</div>'; return; }
+    box.innerHTML='<div style="font-weight:800;color:var(--g);font-size:12px;padding:12px 4px 4px;">🌐 DA INTERNET (Open Food Facts) — toque pra adicionar</div>'+onlineResults.map((x,i)=>`<div class="fr" onclick="pickOnline(${i})"><div><b>${escH(x.name)}</b><div class="fc">por 100g: ${x.kcal}kcal · P${x.p} C${x.c} G${x.f}</div></div><div class="add">＋</div></div>`).join('');
+  }catch(e){ if(seq===offSeq) box.innerHTML='<div class="mut" style="padding:10px;text-align:center;">🌐 Não consegui buscar online agora — tente de novo em alguns segundos (ou use a lista acima).</div>'; }
+}
+function pickOnline(i){ const x=onlineResults[i]; if(!x)return; const g=(+document.getElementById('food-grams').value||100)/100; day().meals[curMeal].push({name:x.name,grams:Math.round(g*100),kcal:Math.round(x.kcal*g),p:+(x.p*g).toFixed(1),c:+(x.c*g).toFixed(1),f:+(x.f*g).toFixed(1)}); save(); renderAll(); closeFood(); }
 function pickFood(k){ const g=+document.getElementById('food-grams').value||100; addFoodEntry(curMeal,k,g); closeFood(); }
 
 // ===================== NAV =====================

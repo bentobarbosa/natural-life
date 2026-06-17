@@ -913,7 +913,7 @@ function aiSystem(){
    '- Se o usuário disser o que comeu ou treinou, lembre que ele pode registrar escrevendo "comi..." ou "fiz... min de...".',
    '- Seja empático com dificuldades (compulsão, falta de tempo, recaída). Foque em progresso, não perfeição.',
    'SEGURANÇA: em temas clínicos (doenças, remédios, gravidez, transtorno alimentar, sintomas) dê orientação geral e recomende um profissional de saúde. Nunca prescreva medicamentos nem doses de remédio.',
-   'Tamanho: normalmente 6–14 linhas. Aprofunde mais só se o usuário pedir.',
+   'TAMANHO: seja DIRETO e CONCISO — responda em no máximo ~8 linhas curtas (use tópicos). Não escreva textão. Aprofunde mais SÓ se a pessoa pedir explicitamente.',
    '',
    aiContext()
   ].join('\n');
@@ -923,7 +923,7 @@ async function askRealAI(text,ai){
   aiHistory.push({role:'user',content:text}); if(aiHistory.length>10) aiHistory=aiHistory.slice(-10);
   const key=(ai.key||'').trim(); let ans;
   if(ai.prov==='gemini'){
-    const body={system_instruction:{parts:[{text:aiSystem()}]},contents:aiHistory.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),generationConfig:{temperature:0.7,maxOutputTokens:900}};
+    const body={system_instruction:{parts:[{text:aiSystem()}]},contents:aiHistory.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),generationConfig:{temperature:0.7,maxOutputTokens:2048,thinkingConfig:{thinkingBudget:0}}};
     const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await res.json(); if(!res.ok) throw new Error((j.error&&j.error.message)||('HTTP '+res.status));
     ans=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(sem resposta)';
@@ -1117,7 +1117,7 @@ async function visionEstimate(dataUrl){
   let txt;
   if(ai.prov==='gemini'){
     const b64=dataUrl.split(',')[1]; const mime=(dataUrl.match(/^data:(.*?);/)||[])[1]||'image/jpeg';
-    const body={contents:[{role:'user',parts:[{text:prompt},{inline_data:{mime_type:mime,data:b64}}]}],generationConfig:{temperature:0.2}};
+    const body={contents:[{role:'user',parts:[{text:prompt},{inline_data:{mime_type:mime,data:b64}}]}],generationConfig:{temperature:0.2,maxOutputTokens:600,thinkingConfig:{thinkingBudget:0}}};
     const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||('HTTP '+r.status)); txt=(((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'';
   } else {

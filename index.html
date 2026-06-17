@@ -113,6 +113,17 @@
   .coach{background:linear-gradient(135deg,#43a047,#7cb342);color:#fff;border-radius:18px;padding:14px 16px;margin-bottom:12px;}
   .coach .st{font-size:13px;opacity:.95;font-weight:700;} .coach .big2{font-size:22px;font-weight:800;}
   .coach .tip{font-size:13px;line-height:1.45;margin-top:8px;background:rgba(255,255,255,.16);border-radius:12px;padding:9px 11px;}
+  /* ofensiva estilo Duolingo */
+  .streak{background:linear-gradient(135deg,#ff9800,#ff5722);color:#fff;border-radius:20px;padding:18px 16px;margin-bottom:12px;text-align:center;box-shadow:0 4px 16px rgba(255,87,34,.25);}
+  .streak .flame{font-size:50px;line-height:1;}
+  .streak .num{font-size:42px;font-weight:800;line-height:1;margin-top:-4px;}
+  .streak .lbl{font-size:15px;opacity:.97;font-weight:800;margin-top:2px;}
+  .streak-week{display:flex;justify-content:space-between;gap:4px;margin-top:14px;background:rgba(255,255,255,.16);border-radius:14px;padding:10px 8px;}
+  .streak-day{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;flex:1;opacity:.85;}
+  .streak-day .c{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.22);font-size:15px;}
+  .streak-day.done{opacity:1;} .streak-day.done .c{background:#fff;}
+  .streak-day.today .c{box-shadow:0 0 0 2.5px #fff;}
+  .streak-tip{font-size:12.5px;line-height:1.4;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:9px 11px;text-align:left;}
   .day-plan{border:1px solid #e2eedf;border-radius:14px;padding:10px 12px;margin-bottom:8px;}
   .day-plan h4{color:var(--g);font-size:14px;margin-bottom:4px;} .day-plan .dl{font-size:12px;color:var(--mut);line-height:1.5;}
   .shop li{font-size:13px;padding:3px 0;} .shop{columns:2;list-style:none;}
@@ -192,7 +203,7 @@
   <main>
     <!-- HOJE -->
     <section class="view on" id="v-hoje">
-      <div class="coach" id="coach"></div>
+      <div class="streak" id="streak"></div>
       <div class="card">
         <h2>🔥 RESUMO DE HOJE</h2>
         <div class="ring-wrap">
@@ -203,7 +214,6 @@
           <div class="macros" id="macros"></div>
         </div>
       </div>
-      <div class="card" id="champ-card" onclick="openRank()" style="cursor:pointer;"></div>
       <div class="card">
         <h2>💧 ÁGUA</h2>
         <div class="water-row" id="water-glasses"></div>
@@ -380,14 +390,6 @@
   <div id="plan-days"></div>
   <ul id="plan-shop" class="shop" style="display:none;"></ul>
   <button class="btn sec wide" style="margin-top:10px;" onclick="document.getElementById('plan-ov').classList.remove('on')">Fechar</button>
-</div></div>
-
-<!-- ranking / campeonato -->
-<div class="ov" id="rank-ov"><div class="ovcard">
-  <h3>🏆 Campeonato saudável</h3>
-  <div class="sub">Ganhe pontos comendo bem! 🟢 Comida verde dá mais pontos · 🔴 vermelha dá menos. Suba de nível!</div>
-  <div id="rank-body"></div>
-  <button class="btn sec wide" style="margin-top:12px;" onclick="document.getElementById('rank-ov').classList.remove('on')">Fechar</button>
 </div></div>
 
 <!-- meal photo -->
@@ -825,34 +827,6 @@ function healthEmoji(s){ return s>=70?'🟢':s>=40?'🟡':'🔴'; }
 function entryScore(e){ let per; if(e&&e.grams>1){ const k=100/e.grams; per={kcal:(e.kcal||0)*k,p:(e.p||0)*k,c:(e.c||0)*k,f:(e.f||0)*k}; } else per={kcal:e.kcal||0,p:e.p||0,c:e.c||0,f:e.f||0}; return healthScore(per,e?e.name:''); }
 function hbadge(s){ return '<span class="hscore" style="background:'+healthColor(s)+'">'+s+'</span>'; }
 
-// ===================== CAMPEONATO / PONTOS =====================
-const LEVELS=[{p:0,n:'Brotinho',e:'🌱'},{p:60,n:'Iniciante saudável',e:'🥗'},{p:180,n:'Em forma',e:'💪'},{p:450,n:'Atleta',e:'🏅'},{p:900,n:'Mestre da nutrição',e:'🥇'},{p:1800,n:'Lenda fitness',e:'👑'}];
-function allEntries(){ const out=[]; for(const d in state.days){ const m=state.days[d].meals||{}; for(const k in m) for(const it of m[k]) out.push(it); } return out; }
-function foodPts(sc){ return Math.round(sc/10); }
-function totalPoints(){ return allEntries().reduce((a,e)=>a+foodPts(entryScore(e)),0); }
-function dayTally(d){ const m=day(d).meals; let g=0,y=0,r=0,pts=0; for(const k in m) for(const it of m[k]){ const sc=entryScore(it); pts+=foodPts(sc); if(sc>=70)g++; else if(sc>=40)y++; else r++; } return {g,y,r,pts}; }
-function levelOf(pts){ let lv=LEVELS[0],nx=null; for(let i=0;i<LEVELS.length;i++){ if(pts>=LEVELS[i].p){ lv=LEVELS[i]; nx=LEVELS[i+1]||null; } } return {lv,nx}; }
-function renderChampionship(){
-  const el=document.getElementById('champ-card'); if(!el)return;
-  const pts=totalPoints(); const {lv,nx}=levelOf(pts); const t=dayTally();
-  let prog=100, sub='Nível máximo! 👑';
-  if(nx){ const span=nx.p-lv.p; prog=Math.min(100,Math.round((pts-lv.p)/span*100)); sub='Faltam '+(nx.p-pts)+' pts pro '+nx.e+' '+nx.n; }
-  el.className='card champ';
-  el.innerHTML='<div style="display:flex;align-items:center;gap:12px;"><div style="font-size:40px;">'+lv.e+'</div><div style="flex:1;"><div class="lvl">🏆 CAMPEONATO · '+pts+' pts</div><div class="lvlname">'+lv.n+'</div></div><div style="font-size:11px;opacity:.92;text-align:right;line-height:1.2;">ver<br>ranking ›</div></div>'
-   +'<div class="champ-bar"><i style="width:'+prog+'%"></i></div><div style="font-size:12px;opacity:.95;">'+sub+'</div>'
-   +'<div class="tally"><div><span class="n">'+t.g+'</span>🟢 hoje</div><div><span class="n">'+t.y+'</span>🟡 hoje</div><div><span class="n">'+t.r+'</span>🔴 hoje</div><div><span class="n">+'+t.pts+'</span>pts hoje</div></div>';
-}
-function openRank(){
-  const pts=totalPoints(); const {lv}=levelOf(pts); const t=dayTally();
-  const ladder=LEVELS.map(L=>'<div class="lr '+(L.n===lv.n?'cur':'')+'"><span class="em">'+L.e+'</span><div style="flex:1;"><b>'+L.n+'</b><div class="mut" style="font-size:12px;">'+L.p+'+ pontos</div></div>'+(L.n===lv.n?'<span style="color:var(--g);font-weight:800;">você</span>':'')+'</div>').join('');
-  document.getElementById('rank-body').innerHTML=
-    '<div style="text-align:center;margin:6px 0 14px;"><div style="font-size:48px;">'+lv.e+'</div><div style="font-weight:800;font-size:20px;color:var(--g);">'+lv.n+'</div><div class="mut">'+pts+' pontos no total</div></div>'
-    +'<div class="tally" style="margin-bottom:14px;"><div style="background:#e8f5e9;color:#2e7d32;"><span class="n">'+t.g+'</span>🟢 verdes hoje</div><div style="background:#fff8e1;color:#f57c00;"><span class="n">'+t.y+'</span>🟡 médias</div><div style="background:#ffebee;color:#c62828;"><span class="n">'+t.r+'</span>🔴 evitar</div></div>'
-    +'<div style="font-weight:800;color:var(--g);font-size:14px;margin-bottom:8px;">🏅 NÍVEIS</div><div class="ladder">'+ladder+'</div>'
-    +'<div class="mut" style="font-size:12px;margin-top:12px;">Cada comida tem uma nota de saúde de 0 a 100 e vale pontos. Coma mais 🟢 verde pra subir mais rápido!</div>';
-  document.getElementById('rank-ov').classList.add('on');
-}
-
 // ===================== GOALS =====================
 function calcGoals(){
   const w=+document.getElementById('i-weight').value, h=+document.getElementById('i-height').value, a=+document.getElementById('i-age').value;
@@ -925,22 +899,28 @@ function renderHoje(){
   wh+=`<button class="btn sec" style="padding:7px 12px;" onclick="addWater(250)">+250ml</button>`;
   document.getElementById('water-glasses').innerHTML=wh;
   document.getElementById('water-txt').textContent=dd.water+' / '+goalW+' ml';
-  renderCoach(); renderChampionship();
+  renderStreak();
 }
 function dayHasActivity(ds){ const d=state.days[ds]; if(!d)return false; const meals=d.meals?Object.values(d.meals).some(a=>a.length):false; return meals||(d.water>0)||(d.ex&&d.ex.length>0); }
 function computeStreak(){ let n=0; const now=new Date(); let start=0; if(!dayHasActivity(todayStr())) start=1; for(let i=start;i<400;i++){ const dt=new Date(now); dt.setDate(now.getDate()-i); if(dayHasActivity(dt.toISOString().slice(0,10))) n++; else break; } return n; }
 const TIPS=['Beba um copo de água agora — a maioria das pessoas confunde sede com fome. 💧','Coloque proteína em TODAS as refeições: sacia mais e preserva músculo. 🥩','Durma 7–9h hoje. Sono ruim aumenta a fome e a vontade de doce. 😴','Caminhe 10 min depois das refeições — ajuda na digestão e na glicemia. 🚶','Encha metade do prato de vegetais: muito volume, poucas calorias. 🥦','Mastigue devagar — leva ~20min pro cérebro sentir saciedade. 🍴','Treino de força 3–5x/semana é o melhor pro corpo e metabolismo. 🏋️','Progresso > perfeição. Um dia fora não estraga nada, só continue. 🌱','Prefira a fruta inteira ao suco: mais fibra, mais saciedade. 🍎','Deixe a garrafa de água sempre à vista — o que está à mão, a gente faz. 💦','Planeje a próxima refeição antes da fome bater — evita escolha ruim. 📝','Registre tudo que comer hoje: o que é medido, melhora. 📊'];
-function renderCoach(){
-  const el=document.getElementById('coach'); if(!el)return;
-  const streak=computeStreak(); const r=todayRemaining();
-  let tip;
-  if(r&&r.p>25) tip='Faltam '+r.p.toFixed(0)+'g de proteína hoje. Que tal frango, ovos, iogurte ou um whey? 🥩';
-  else if(day().water<800) tip='Você bebeu pouca água hoje ('+day().water+'ml). Bora hidratar — meta ~2,5L! 💧';
-  else if(r&&r.kcal<0) tip='Você passou da meta hoje. Sem culpa — amanhã recomeça. Que tal uma caminhada? 🚶';
-  else if(burned()===0) tip='Ainda não treinou hoje. Até 20 min já contam — registre na aba Treino! 🏋️';
-  else { const d=new Date(); tip=TIPS[(d.getFullYear()*1000+ (d.getMonth()*31+d.getDate()))%TIPS.length]; }
-  const emoji=streak>=7?'🏆':streak>=3?'🔥':'🌱';
-  el.innerHTML='<div class="st">'+emoji+' SEQUÊNCIA</div><div class="big2">'+streak+(streak===1?' dia':' dias')+' seguidos</div><div class="tip">💡 <b>Dica:</b> '+tip+'</div>';
+function renderStreak(){
+  const el=document.getElementById('streak'); if(!el){ renderMealNow(); return; }
+  const streak=computeStreak(); const now=new Date(); const WD=['D','S','T','Q','Q','S','S'];
+  let days='';
+  for(let i=6;i>=0;i--){ const dt=new Date(now); dt.setDate(now.getDate()-i); const ds=dt.toISOString().slice(0,10); const done=dayHasActivity(ds); const today=i===0;
+    days+='<div class="streak-day'+(done?' done':'')+(today?' today':'')+'"><span>'+WD[dt.getDay()]+'</span><span class="c">'+(done?'🔥':'')+'</span></div>'; }
+  const r=todayRemaining(); let tip;
+  if(r&&r.p>25) tip='Faltam '+r.p.toFixed(0)+'g de proteína hoje. 🥩';
+  else if(day().water<800) tip='Beba mais água hoje! 💧';
+  else if(burned()===0) tip='Registre um treino hoje pra somar à ofensiva! 🏋️';
+  else { const d=new Date(); tip=TIPS[(d.getFullYear()*1000+(d.getMonth()*31+d.getDate()))%TIPS.length]; }
+  const todayDone=dayHasActivity(todayStr());
+  const head = streak>0 ? (streak+(streak===1?' dia':' dias')+' de ofensiva!') : 'Comece sua ofensiva hoje!';
+  const mile=[7,30,60,100,365].find(m=>m>streak);
+  el.innerHTML='<div class="flame" style="'+(streak===0?'opacity:.55;filter:grayscale(.5);':'')+'">🔥</div><div class="num">'+streak+'</div><div class="lbl">'+head+'</div>'
+    +'<div class="streak-week">'+days+'</div>'
+    +'<div class="streak-tip">'+(todayDone?'✅ Hoje garantido! ':'⚠️ Registre algo hoje pra manter a ofensiva! ')+(mile?('Faltam '+(mile-streak)+' dias pra '+mile+'! '):'')+'<br>💡 '+tip+'</div>';
   renderMealNow();
 }
 // ---- meal-time aware assistant ----
@@ -1448,7 +1428,7 @@ const TUTORIAL=[
  {i:'📸',t:'Foto da refeição',d:'Tire uma foto do prato e a IA calcula as calorias e os macros de tudo — sem adicionar item por item.'},
  {i:'🍴',t:'Milhares de alimentos',d:'Busque qualquer comida ou marca (até pela internet) ou escaneie o código de barras do produto.'},
  {i:'🏋️',t:'Treino, metas e progresso',d:'Registre exercícios, acompanhe peso, água, suas metas e o relatório semanal da sua evolução.'},
- {i:'🏆',t:'Campeonato saudável',d:'Cada comida tem uma nota de 0 a 100: 🟢 verde é saudável, 🔴 vermelho é evitar. Comer verde te dá mais pontos e sobe seu nível. Bora competir com você mesmo!'},
+ {i:'🔥',t:'Ofensiva diária',d:'Use o app todo dia (registre comida, água ou treino) pra manter sua ofensiva acesa, igual no Duolingo! E cada comida tem nota de saúde de 0 a 100 (🟢 verde = saudável, 🔴 vermelho = evitar).'},
 ];
 function introHTML(html){ document.getElementById('intro-screen').innerHTML=html; }
 function logoBox(){ return '<div class="intro-logo"><img src="icon-180.png" alt="logo" onerror="this.parentNode.textContent=\'🌿\'"></div>'; }

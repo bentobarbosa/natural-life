@@ -133,9 +133,37 @@
   body.dark .rcard,body.dark .day-plan{background:#141b12;border-color:#2a3327;}
   body.dark .fr:active{background:#1c241a;} body.dark .sw{background:#3a4435;} body.dark .toggle{border-bottom-color:#26301f;}
   body.dark .tag{background:#26301f;}
+  /* ===== INTRO / ONBOARDING bonito ===== */
+  #intro{position:fixed;inset:0;z-index:56;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 22px calc(26px + env(safe-area-inset-bottom));color:#fff;overflow-y:auto;background:linear-gradient(160deg,#1b5e20,#2e7d32 38%,#43a047 72%,#66bb6a);}
+  #intro.on{display:flex;}
+  #intro::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 28% 18%,rgba(255,255,255,.20),transparent 45%),radial-gradient(circle at 82% 85%,rgba(255,255,255,.13),transparent 42%);pointer-events:none;}
+  .intro-screen{position:relative;width:100%;max-width:420px;margin:auto;animation:introFade .45s ease;}
+  @keyframes introFade{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+  .intro-logo{width:118px;height:118px;border-radius:30px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:66px;margin:0 auto 18px;box-shadow:0 12px 34px rgba(0,0,0,.28);animation:floaty 3.2s ease-in-out infinite;overflow:hidden;}
+  .intro-logo img{width:100%;height:100%;object-fit:cover;border-radius:30px;}
+  @keyframes floaty{50%{transform:translateY(-9px);}}
+  #intro h1{font-size:34px;font-weight:800;letter-spacing:.5px;}
+  #intro h2{font-size:24px;font-weight:800;margin-bottom:4px;}
+  #intro .tag{font-size:16px;opacity:.95;margin:8px 0 20px;line-height:1.5;}
+  .intro-feats{text-align:left;display:flex;flex-direction:column;gap:10px;margin:14px 0 24px;}
+  .intro-feat{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.14);border-radius:16px;padding:12px 14px;font-size:14px;font-weight:600;line-height:1.35;}
+  .intro-feat .fi{font-size:26px;flex:none;}
+  .btn-white{background:#fff;color:#2e7d32;border:none;border-radius:16px;padding:15px;font-weight:800;font-size:16px;width:100%;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18);margin-top:6px;}
+  .btn-white:active{transform:scale(.98);}
+  .btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.55);border-radius:16px;padding:14px;font-weight:700;font-size:15px;width:100%;cursor:pointer;margin-top:10px;}
+  .btn-ghost:active{transform:scale(.98);}
+  #intro input,#intro textarea{background:rgba(255,255,255,.96);border:none;color:#1b3a1b;border-radius:14px;padding:14px;font-size:16px;width:100%;margin-top:8px;outline:none;}
+  #intro label{display:block;text-align:left;font-size:13px;font-weight:700;opacity:.95;margin-top:12px;}
+  .intro-card{background:rgba(255,255,255,.12);border-radius:20px;padding:22px 18px;}
+  .intro-dots{display:flex;gap:7px;justify-content:center;margin:20px 0 4px;}
+  .intro-dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);transition:.25s;}
+  .intro-dots i.on{background:#fff;width:22px;border-radius:5px;}
+  .intro-lk{display:inline-block;margin-top:16px;color:#fff;opacity:.85;text-decoration:underline;font-size:13px;cursor:pointer;}
+  .intro-tut-ic{font-size:72px;margin-bottom:10px;}
 </style>
 </head>
 <body>
+<div id="intro"><div class="intro-screen" id="intro-screen"></div></div>
 <div id="app">
   <header>
     <div><h1>🌿 natural.life</h1><div class="date" id="hdr-date"></div></div>
@@ -284,9 +312,15 @@
   <div class="sub" style="margin-bottom:4px;">Funcionam enquanto o app está aberto na tela.</div>
   <div class="toggle"><div><div class="lbl">💧 Beber água</div><div class="d">Lembra a cada 1h30</div></div><div class="sw" id="sw-water" onclick="toggleSw('water')"><i></i></div></div>
   <div class="toggle"><div><div class="lbl">🍽️ Registrar refeições</div><div class="d">Café, almoço e jantar</div></div><div class="sw" id="sw-meal" onclick="toggleSw('meal')"><i></i></div></div>
+  <div style="font-weight:800;color:var(--g);font-size:14px;margin:16px 0 2px;">👤 Minha conta & backup</div>
+  <div class="sub" id="acc-info" style="margin-bottom:6px;"></div>
+  <div class="row" style="gap:8px;"><button class="btn sec" style="flex:1;" onclick="copyBackup()">📋 Copiar backup</button><button class="btn sec" style="flex:1;" onclick="emailBackup()">✉️ Enviar p/ e-mail</button></div>
+  <div class="row" style="gap:8px;margin-top:8px;"><button class="btn sec" style="flex:1;" onclick="restoreFromSettings()">♻️ Restaurar de um código</button></div>
+  <div class="mut" style="font-size:11px;margin-top:6px;">Guarde seu código de backup (envie pro seu e-mail). Com ele você recupera tudo em qualquer aparelho.</div>
   <div style="font-weight:800;color:var(--g);font-size:14px;margin:16px 0 2px;">🎨 Aparência & voz</div>
   <div class="toggle"><div><div class="lbl">🌙 Modo escuro</div><div class="d">Tema escuro pro app</div></div><div class="sw" id="sw-dark" onclick="toggleSw('dark')"><i></i></div></div>
   <div class="toggle"><div><div class="lbl">🔊 IA fala as respostas</div><div class="d">Lê as respostas em voz alta</div></div><div class="sw" id="sw-tts" onclick="toggleSw('tts')"><i></i></div></div>
+  <div class="row" style="margin-top:14px;"><button class="btn sec wide" onclick="document.getElementById('set-ov').classList.remove('on');startIntro();">❓ Ver tutorial de novo</button></div>
   <div class="row" style="margin-top:16px;gap:8px;">
     <button class="btn sec" onclick="reonboard()" style="flex:1;">✏️ Refazer perfil</button>
     <button class="btn" onclick="saveSettings()" style="flex:1;">Salvar</button>
@@ -353,7 +387,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -1165,6 +1199,9 @@ function addMsg(text,who,noSave){ const c=document.getElementById('chat'); const
 function saveChatMsg(who,text){ if(!state.chat)state.chat=[]; state.chat.push({w:who,t:text}); if(state.chat.length>60) state.chat=state.chat.slice(-60); save(); }
 function renderSavedChat(){ const c=document.getElementById('chat'); c.innerHTML=''; (state.chat||[]).forEach(m=>{ const d=document.createElement('div'); d.className='msg '+(m.w==='me'?'me':'bot'); d.textContent=m.t; c.appendChild(d); }); aiHistory=(state.chat||[]).filter(m=>m.w==='me'||m.w==='bot').slice(-10).map(m=>({role:m.w==='me'?'user':'assistant',content:m.t})); }
 function clearChat(){ state.chat=[]; aiHistory=[]; save(); document.getElementById('chat').innerHTML=''; document.getElementById('set-ov').classList.remove('on'); go('ia'); addMsg('🧹 Conversa apagada! Recomeçamos do zero. Como posso te ajudar? 🌿','bot'); }
+function copyBackup(){ const code=encodeBackup(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(()=>alert('📋 Código de backup copiado! Cole num lugar seguro (ex: envie pro seu e-mail).'),()=>prompt('Copie seu código de backup:',code)); } else prompt('Copie seu código de backup:',code); }
+function emailBackup(){ const code=encodeBackup(); const to=(state.account&&state.account.email)||''; const sub=encodeURIComponent('Meu backup do natural.life'); const body=encodeURIComponent('Guarde este código. Pra recuperar sua conta, abra o app, toque em "Já tenho conta" (ou ⚙️ Restaurar) e cole o código abaixo:\n\n'+code); location.href='mailto:'+to+'?subject='+sub+'&body='+body; }
+function restoreFromSettings(){ const code=prompt('Cole o código de backup pra restaurar (isso vai substituir os dados atuais):'); if(!code)return; const data=decodeBackup(code); if(!data){ alert('Código inválido. Confira se copiou ele inteiro.'); return; } state=data; save(); location.reload(); }
 // text-to-speech (optional)
 function speak(text){ try{ if(!state.settings.tts||!('speechSynthesis'in window))return; const u=new SpeechSynthesisUtterance(text.replace(/[•🔥🥩🍞🥑🌿💪🍽️📊✅⚠️💡🎯🏋️🍳📅🛒🔄😴💊⏳📉🍕🧠💧🏠📈🥦🍫⚖️🐟🌱☕🔻🔺]/g,'')); u.lang='pt-BR'; u.rate=1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
 function aiSend(){
@@ -1255,7 +1292,7 @@ function aiStatusText(){
   if(BUILTIN_AI.key) return '✅ IA inteligente ATIVA automaticamente (sem precisar configurar nada).';
   return '🤖 IA automática: tentando a IA inteligente; sem chave configurada, uso o assistente embutido (offline) — que já é bem forte. Pra liberar 100%, conecte uma chave grátis abaixo.';
 }
-function openSettings(){ document.getElementById('set-prov').value=state.ai.prov; document.getElementById('set-key').value=state.ai.key||''; setProvUI(); document.getElementById('ai-status').textContent=aiStatusText(); document.getElementById('sw-water').classList.toggle('on',!!state.settings.remWater); document.getElementById('sw-meal').classList.toggle('on',!!state.settings.remMeal); document.getElementById('sw-dark').classList.toggle('on',!!state.settings.dark); document.getElementById('sw-tts').classList.toggle('on',!!state.settings.tts); document.getElementById('set-ov').classList.add('on'); }
+function openSettings(){ document.getElementById('set-prov').value=state.ai.prov; document.getElementById('set-key').value=state.ai.key||''; setProvUI(); document.getElementById('ai-status').textContent=aiStatusText(); document.getElementById('sw-water').classList.toggle('on',!!state.settings.remWater); document.getElementById('sw-meal').classList.toggle('on',!!state.settings.remMeal); document.getElementById('sw-dark').classList.toggle('on',!!state.settings.dark); document.getElementById('sw-tts').classList.toggle('on',!!state.settings.tts); const ai=document.getElementById('acc-info'); if(ai) ai.innerHTML=state.account?('Conta: <b>'+(state.account.name||'')+'</b> · '+(state.account.email||'')):'Você ainda não criou uma conta. Crie pra poder recuperar seus dados.'; document.getElementById('set-ov').classList.add('on'); }
 function setProvUI(){ const p=document.getElementById('set-prov').value; const wrap=document.getElementById('set-key-wrap'); wrap.style.display=(p==='gemini'||p==='openai')?'block':'none'; const hint=document.getElementById('set-key-hint'); hint.innerHTML=p==='gemini'?'Pegue grátis em <b>aistudio.google.com/apikey</b>':p==='openai'?'Pegue em <b>platform.openai.com/api-keys</b> (uso pago)':''; }
 function toggleSw(k){ const id={water:'sw-water',meal:'sw-meal',dark:'sw-dark',tts:'sw-tts'}[k]; const on=document.getElementById(id).classList.toggle('on'); if(k==='dark') applyDark(on); }
 function applyDark(on){ document.body.classList.toggle('dark',!!on); }
@@ -1282,6 +1319,85 @@ const OB_STEPS=[
  {t:'🏃 Nível de atividade',s:'Quanto você se movimenta no dia a dia?',k:'act',type:'opt',opts:[['1.2','😴 Sedentário'],['1.375','🚶 Leve (1-3x/sem)'],['1.55','🏃 Moderado (3-5x/sem)'],['1.725','🔥 Intenso (6-7x/sem)'],['1.9','🏆 Atleta']]},
  {t:'🎯 Seu objetivo',s:'O que você quer alcançar? Vou ajustar suas calorias pra isso.',k:'goal',type:'opt',opts:[['lose','🔻 Emagrecer'],['recomp','✨ Definir'],['maintain','⚖️ Manter'],['gain','💪 Ganhar músculo'],['bulk','🔺 Crescer / ganhar peso']]},
 ];
+// ===================== INTRO / TUTORIAL / CONTA =====================
+const TUTORIAL=[
+ {i:'🤖',t:'Assistente com IA',d:'Pergunte qualquer dúvida de nutrição e treino. Registre comida e treino só escrevendo, ex: "comi 2 ovos e arroz".'},
+ {i:'📸',t:'Foto da refeição',d:'Tire uma foto do prato e a IA calcula as calorias e os macros de tudo — sem adicionar item por item.'},
+ {i:'🍴',t:'Milhares de alimentos',d:'Busque qualquer comida ou marca (até pela internet) ou escaneie o código de barras do produto.'},
+ {i:'🏋️',t:'Treino, metas e progresso',d:'Registre exercícios, acompanhe peso, água, suas metas e o relatório semanal da sua evolução.'},
+];
+function introHTML(html){ document.getElementById('intro-screen').innerHTML=html; }
+function logoBox(){ return '<div class="intro-logo"><img src="icon-180.png" alt="logo" onerror="this.parentNode.textContent=\'🌿\'"></div>'; }
+function startIntro(){ document.getElementById('intro').classList.add('on'); introWelcome(); }
+function introWelcome(){
+  introHTML(logoBox()
+    +'<h1>natural.life</h1><div class="tag">Seu nutricionista e personal trainer com inteligência artificial. 🌿</div>'
+    +'<div class="intro-feats">'
+    +'<div class="intro-feat"><span class="fi">🤖</span><span>IA que tira suas dúvidas e monta sua dieta</span></div>'
+    +'<div class="intro-feat"><span class="fi">📸</span><span>Foto do prato calcula as calorias sozinha</span></div>'
+    +'<div class="intro-feat"><span class="fi">🔥</span><span>Metas, treino, água e progresso num só lugar</span></div>'
+    +'</div>'
+    +'<button class="btn-white" onclick="introAccount()">Começar →</button>');
+}
+function introAccount(){
+  introHTML(logoBox()
+    +'<h2>Bem-vindo! 👋</h2><div class="tag">Crie sua conta pra não perder seus dados. É rápido e grátis.</div>'
+    +'<button class="btn-white" onclick="introCreate()">🆕 Criar minha conta</button>'
+    +'<button class="btn-ghost" onclick="introLogin()">🔑 Já tenho conta</button>'
+    +'<span class="intro-lk" onclick="introTutorial(0)">pular e usar sem conta</span>');
+}
+function introCreate(){
+  introHTML('<div class="intro-card"><h2 style="text-align:center;">🆕 Criar conta</h2>'
+    +'<div class="tag" style="text-align:center;">Pra eu te chamar pelo nome e proteger seus dados.</div>'
+    +'<label>Seu nome</label><input id="acc-name" placeholder="Como te chamo?" autocomplete="name">'
+    +'<label>Seu e-mail</label><input id="acc-email" type="email" placeholder="voce@email.com" autocomplete="email" inputmode="email">'
+    +'<div id="acc-err" style="color:#ffd; font-size:12px; min-height:14px; margin-top:8px; text-align:left;"></div>'
+    +'<button class="btn-white" onclick="introSaveAccount()">Continuar →</button>'
+    +'<button class="btn-ghost" onclick="introAccount()">← Voltar</button></div>');
+  setTimeout(()=>{const n=document.getElementById('acc-name'); if(n)n.focus();},80);
+}
+function introSaveAccount(){
+  const name=(document.getElementById('acc-name').value||'').trim();
+  const email=(document.getElementById('acc-email').value||'').trim();
+  const err=document.getElementById('acc-err');
+  if(name.length<2){ err.textContent='Me diz seu nome 🙂'; return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ err.textContent='Digite um e-mail válido (ex: voce@email.com).'; return; }
+  state.account={name,email,created:todayStr()}; save();
+  introTutorial(0);
+}
+function introLogin(){
+  introHTML('<div class="intro-card"><h2 style="text-align:center;">🔑 Já tenho conta</h2>'
+    +'<div class="tag" style="text-align:center;">Cole aqui o seu <b>código de backup</b> (aquele que você salvou/enviou pro seu e-mail) pra recuperar todos os seus dados neste aparelho.</div>'
+    +'<label>Código de backup</label><textarea id="acc-code" rows="4" placeholder="cole o código aqui..."></textarea>'
+    +'<div id="acc-err2" style="color:#ffd; font-size:12px; min-height:14px; margin-top:8px;"></div>'
+    +'<button class="btn-white" onclick="introRestore()">Recuperar conta</button>'
+    +'<button class="btn-ghost" onclick="introAccount()">← Voltar</button>'
+    +'<div class="tag" style="font-size:12px;margin-top:14px;opacity:.85;">Não tem o código? Ele fica em ⚙️ Configurações → "Meu backup" depois que você cria a conta. Sem ele, comece criando uma conta nova.</div></div>');
+}
+function introRestore(){
+  const code=(document.getElementById('acc-code').value||'').trim(); const err=document.getElementById('acc-err2');
+  const data=decodeBackup(code);
+  if(!data){ err.textContent='Código inválido. Confira se copiou ele inteiro.'; return; }
+  state=data; save();
+  document.getElementById('intro').classList.remove('on');
+  applyDark(state.settings&&state.settings.dark); renderAll(); buildChips(); renderSavedChat(); renderGoalsOut&&renderGoalsOut();
+  if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; }
+  go('hoje'); go('ia'); addMsg('✅ Conta recuperada! Bem-vindo de volta'+(state.account&&state.account.name?(', '+state.account.name.split(' ')[0]):'')+'! 🌿','bot');
+}
+function introTutorial(idx){
+  idx=Math.max(0,Math.min(TUTORIAL.length-1,idx)); const t=TUTORIAL[idx]; const last=idx===TUTORIAL.length-1;
+  introHTML('<div class="intro-tut-ic">'+t.i+'</div>'
+    +'<h2>'+t.t+'</h2><div class="tag">'+t.d+'</div>'
+    +'<div class="intro-dots">'+TUTORIAL.map((_,i)=>'<i class="'+(i===idx?'on':'')+'"></i>').join('')+'</div>'
+    +'<button class="btn-white" onclick="introTutorial('+(idx+1)+')" '+(last?'style="display:none"':'')+'>Próximo →</button>'
+    +(last?'<button class="btn-white" onclick="introToProfile()">Vamos lá! 🚀</button>':'')
+    +'<span class="intro-lk" onclick="introToProfile()">'+(last?'':'pular tutorial')+'</span>');
+}
+function introToProfile(){ document.getElementById('intro-screen').innerHTML=''; startOb(); }
+// ---- backup / restauração ----
+function encodeBackup(){ try{ return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }catch(e){ return ''; } }
+function decodeBackup(code){ try{ const o=JSON.parse(decodeURIComponent(escape(atob(code.trim())))); if(o&&typeof o==='object'&&('days'in o)) return o; }catch(e){} return null; }
+
 function startOb(){ ob={step:0,d:{}}; document.getElementById('ob-ov').classList.add('on'); renderOb(); }
 function renderOb(){
   const st=OB_STEPS[ob.step]; const c=document.getElementById('ob-card');
@@ -1298,12 +1414,12 @@ function obAdvance(){ if(ob.step<OB_STEPS.length-1){ ob.step++; renderOb(); } el
 function obFinish(){
   const d=ob.d; if(!d.w||!d.h||!d.a){ skipOb(); return; } d.sex=d.sex||'m'; d.act=d.act||'1.55'; d.goal=d.goal||'maintain';
   document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-act').value=d.act; document.getElementById('i-goal').value=d.goal;
-  calcGoals(); document.getElementById('ob-ov').classList.remove('on');
+  calcGoals(); document.getElementById('ob-ov').classList.remove('on'); document.getElementById('intro').classList.remove('on');
   if(!state.weights.length){ state.weights.push({date:todayStr(),kg:d.w}); save(); }
-  go('ia'); const g=state.goals;
-  addMsg('🎉 Pronto, '+(d.sex==='f'?'tudo certo':'tudo certo')+'! Seu plano:\n\n🔥 '+g.kcal+' kcal/dia\n🥩 '+g.protein+'g proteína · 🍞 '+g.carb+'g carbo · 🥑 '+g.fat+'g gordura\n\nAgora é só viver! Você pode:\n• Registrar comida: "comi 2 ovos e arroz"\n• Registrar treino: "fiz 30min de corrida"\n• Pedir um cardápio: "monte uma dieta"\n• Tirar qualquer dúvida de nutrição e treino 💪','bot');
+  go('ia'); const g=state.goals; const nm=(state.account&&state.account.name)?(', '+state.account.name.split(' ')[0]):'';
+  addMsg('🎉 Pronto'+nm+'! Seu plano:\n\n🔥 '+g.kcal+' kcal/dia\n🥩 '+g.protein+'g proteína · 🍞 '+g.carb+'g carbo · 🥑 '+g.fat+'g gordura\n\nAgora é só viver! Você pode:\n• Registrar comida: "comi 2 ovos e arroz"\n• Registrar treino: "fiz 30min de corrida"\n• Pedir um cardápio: "monte uma dieta"\n• 📸 Tirar foto do prato (eu calculo tudo)\n• Tirar qualquer dúvida de nutrição e treino 💪','bot');
 }
-function skipOb(){ document.getElementById('ob-ov').classList.remove('on'); go('hoje'); }
+function skipOb(){ document.getElementById('ob-ov').classList.remove('on'); document.getElementById('intro').classList.remove('on'); go('hoje'); }
 
 // ===================== BARCODE SCANNER =====================
 let scanStream=null,scanRun=false,barcodeDet=null;
@@ -1529,13 +1645,14 @@ function init(){
   applyDark(state.settings.dark);
   if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; renderGoalsOut(); }
   renderAll(); buildChips(); startReminders();
-  if(!state.profile){
-    addMsg('Oi! 🌿 Bem-vindo ao natural.life! Eu sou seu assistente de nutrição e treino.', 'bot');
-    startOb();
+  if(!state.account && !state.profile){
+    startIntro();
+  } else if(!state.profile){
+    document.getElementById('intro').classList.add('on'); introToProfile();
   } else if(state.chat&&state.chat.length){
     renderSavedChat();
   } else {
-    addMsg('Oi de novo! 🌿 Pode registrar comida ("comi 2 ovos"), treino ("fiz 30min de corrida"), pedir um cardápio, uma receita, ou tirar qualquer dúvida. 💪','bot');
+    addMsg('Oi de novo'+(state.account&&state.account.name?(', '+state.account.name.split(' ')[0]):'')+'! 🌿 Pode registrar comida ("comi 2 ovos"), treino ("fiz 30min de corrida"), tirar foto do prato, pedir um cardápio ou tirar qualquer dúvida. 💪','bot');
   }
 }
 init();

@@ -1,5 +1,5 @@
 // natural.life service worker — offline app shell (network-first, cache fallback)
-const CACHE = 'naturallife-v2';
+const CACHE = 'naturallife-v3';
 const ASSETS = ['./', './index.html', './icon-180.png', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {

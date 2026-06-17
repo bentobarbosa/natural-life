@@ -749,7 +749,15 @@ const FOODS={
  'Vitamina de frutas (com leite)':{kcal:90,p:3,c:15,f:2,unit:300,al:['vitamina de banana','vitamina de frutas','batida de frutas']},
 };
 const FKEYS=Object.keys(FOODS).sort((a,b)=>a.localeCompare(b,'pt',{sensitivity:'base'}));
-function findFood(q){ q=norm(q); for(const k of FKEYS){ if(norm(k).includes(q)) return k; const f=FOODS[k]; if(f.al) for(const a of f.al) if(norm(a)===q||q.includes(norm(a))) return k; } return null; }
+function findFood(q){ q=norm(q).trim(); if(q.length<2) return null;
+  // 1) correspondência EXATA (chave ou apelido) — evita confundir "ovo" com "ovomaltine"
+  for(const k of FKEYS){ if(norm(k)===q) return k; const f=FOODS[k]; if(f.al) for(const a of f.al) if(norm(a)===q) return k; }
+  // 2) chave/apelido aparece como PALAVRA inteira na busca
+  for(const k of FKEYS){ const f=FOODS[k]; const cand=[norm(k)].concat((f.al||[]).map(norm));
+    for(const c of cand){ if(c.length<3) continue; const re=new RegExp('(^| )'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'( |s)?( |$)'); if(re.test(q)) return k; } }
+  // 3) fallback: substring (chave contém a busca, ou busca contém apelido)
+  for(const k of FKEYS){ if(norm(k).includes(q)) return k; const f=FOODS[k]; if(f.al) for(const a of f.al){ const na=norm(a); if(na.length>=4&&q.includes(na)) return k; } }
+  return null; }
 
 // ===================== EXERCISE DB (MET) =====================
 const EXS={
@@ -1680,17 +1688,42 @@ function onMealPhoto(input){
   reader.onload=()=>{ const dataUrl=reader.result; imgEl.src=dataUrl; imgEl.style.display='block';
     visionEstimate(dataUrl).then(o=>{
       if(!o){ res.innerHTML='<div class="mut">😕 Não consegui identificar a comida nessa foto. Tente outra (mais de perto e iluminada) ou use a busca.</div>'; return; }
-      window._mphotoFood=o;
-      res.innerHTML='<div class="rcard" style="cursor:default;"><div class="rt">🍽️ '+o.name+'</div><div class="rk" style="margin:4px 0;">estimativa do prato inteiro:</div>'
-        +'<div class="row" style="text-align:center;gap:6px;"><div style="flex:1;"><div style="font-weight:800;color:var(--g);font-size:20px;">'+o.kcal+'</div><div class="mut">kcal</div></div>'
-        +'<div style="flex:1;"><div style="font-weight:800;color:var(--p);font-size:18px;">'+o.p+'g</div><div class="mut">prot</div></div>'
-        +'<div style="flex:1;"><div style="font-weight:800;color:var(--c);font-size:18px;">'+o.c+'g</div><div class="mut">carbo</div></div>'
-        +'<div style="flex:1;"><div style="font-weight:800;color:var(--f);font-size:18px;">'+o.f+'g</div><div class="mut">gord</div></div></div>'
-        +'<button class="btn wide" id="mphoto-addbtn" style="margin-top:12px;" onclick="addMealPhoto()">＋ Registrar no '+(MEAL_PT[curMeal]||'diário')+'</button>'
-        +'<div class="mut" style="text-align:center;margin-top:6px;font-size:11px;">É uma estimativa da IA — ajuste depois se precisar.</div></div>';
+      window._mphotoFood={name:o.name,kcal:Math.round(o.kcal),p:Math.round(o.p),c:Math.round(o.c),f:Math.round(o.f)};
+      renderMphotoResult();
     }).catch(e=>{ res.innerHTML='<div class="mut">⚠️ Erro ao analisar: '+(e.message||e)+'. Tente de novo.</div>'; });
   };
   reader.readAsDataURL(file);
+}
+function renderMphotoResult(){
+  const o=window._mphotoFood; const res=document.getElementById('mphoto-result'); if(!o||!res)return;
+  res.innerHTML='<div class="rcard" style="cursor:default;"><div class="rt">🍽️ '+o.name+'</div><div class="rk" style="margin:4px 0;">estimativa do prato inteiro:</div>'
+    +'<div class="row" style="text-align:center;gap:6px;"><div style="flex:1;"><div style="font-weight:800;color:var(--g);font-size:20px;">'+o.kcal+'</div><div class="mut">kcal</div></div>'
+    +'<div style="flex:1;"><div style="font-weight:800;color:var(--p);font-size:18px;">'+o.p+'g</div><div class="mut">prot</div></div>'
+    +'<div style="flex:1;"><div style="font-weight:800;color:var(--c);font-size:18px;">'+o.c+'g</div><div class="mut">carbo</div></div>'
+    +'<div style="flex:1;"><div style="font-weight:800;color:var(--f);font-size:18px;">'+o.f+'g</div><div class="mut">gord</div></div></div>'
+    +'<div style="background:#eef6ec;border-radius:12px;padding:9px 10px;margin-top:10px;"><div style="font-size:12px;font-weight:700;color:var(--g);margin-bottom:5px;">🤖 Faltou algum item? Me fala que eu somo:</div>'
+    +'<div class="row" style="gap:6px;"><input id="mphoto-missing" placeholder="ex: 2 ovos, 100g de arroz" style="flex:1;"><button class="btn" onclick="addMissingToPhoto()">Somar</button></div>'
+    +'<div id="mphoto-missmsg" class="mut" style="font-size:11px;margin-top:5px;"></div></div>'
+    +'<button class="btn wide" id="mphoto-addbtn" style="margin-top:12px;" onclick="addMealPhoto()">＋ Registrar no '+(MEAL_PT[curMeal]||'diário')+'</button>'
+    +'<div class="mut" style="text-align:center;margin-top:6px;font-size:11px;">É uma estimativa da IA — ajuste se precisar.</div></div>';
+}
+function parseFoodsText(text){
+  const parts=text.split(/,| e | mais |;|\+/i); let tot={kcal:0,p:0,c:0,f:0}; const names=[];
+  for(const part of parts){ const pn=norm(part); const clean=pn.replace(/\d+[.,]?\d*/g,' ').replace(/\b(faltou|tinha|tambem|tem|o|a|os|as|um|uma|dois|duas|tres|de|do|da|com|mais|e|g|grama|gramas|ml|unidade|unidades|fatia|fatias|colher|colheres|copo|copos|porcao)\b/g,' ').replace(/\s+/g,' ').trim(); const key=findFood(pn)||(clean&&findFood(clean)); if(!key) continue; const f=FOODS[key]; let grams=null,m;
+    if(m=pn.match(/(\d+[.,]?\d*)\s*(g|grama|gramas|ml)/)) grams=parseFloat(m[1].replace(',','.'));
+    else if(m=pn.match(/(\d+[.,]?\d*)\s*(unidad|fatia|colher|copo|x|por)/)) grams=parseFloat(m[1].replace(',','.'))*(f.unit||100);
+    else if(m=pn.match(/(\d+[.,]?\d*)/)){ const nn=parseFloat(m[1].replace(',','.')); grams=f.unit?nn*f.unit:(nn>=20?nn:nn*100); }
+    else grams=f.unit||100;
+    grams=Math.round(grams); tot.kcal+=f.kcal*grams/100; tot.p+=f.p*grams/100; tot.c+=f.c*grams/100; tot.f+=f.f*grams/100; names.push(grams+'g '+key); }
+  return {tot:{kcal:Math.round(tot.kcal),p:Math.round(tot.p),c:Math.round(tot.c),f:Math.round(tot.f)},names};
+}
+function addMissingToPhoto(){
+  const inp=document.getElementById('mphoto-missing'); const v=(inp.value||'').trim(); const msg=document.getElementById('mphoto-missmsg'); const o=window._mphotoFood; if(!v||!o)return;
+  const {tot,names}=parseFoodsText(v);
+  if(!names.length){ msg.textContent='🤔 Não reconheci. Tente "2 ovos" ou "100g de arroz".'; return; }
+  o.kcal+=tot.kcal; o.p+=tot.p; o.c+=tot.c; o.f+=tot.f; o.name+=' + '+names.map(n=>n.replace(/^\d+g /,'')).join(', ');
+  window._mphotoFood=o; renderMphotoResult();
+  document.getElementById('mphoto-missmsg').textContent='✅ Somei: '+names.join(', ')+' (+'+tot.kcal+'kcal).';
 }
 function addMealPhoto(){ const o=window._mphotoFood; if(!o)return; day().meals[curMeal].push({name:'📸 '+o.name,grams:1,kcal:Math.round(o.kcal),p:+(+o.p).toFixed(1),c:+(+o.c).toFixed(1),f:+(+o.f).toFixed(1)}); save(); renderAll(); document.getElementById('mphoto-ov').classList.remove('on'); closeFood(); go('hoje'); }
 async function visionEstimate(dataUrl){

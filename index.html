@@ -152,6 +152,11 @@
         <div class="water-row" id="water-glasses"></div>
         <div class="mut" style="margin-top:8px;" id="water-txt">0 / 0 ml</div>
       </div>
+      <div class="card" id="photo-card" style="background:linear-gradient(135deg,#7e57c2,#5e35b1);color:#fff;">
+        <h2 style="color:#fff;">📸 FOTO DA REFEIÇÃO</h2>
+        <div style="font-size:13px;opacity:.95;margin-bottom:10px;line-height:1.45;">Tire uma foto do seu prato e a IA calcula as calorias e macros de tudo — sem precisar adicionar item por item! 🤖</div>
+        <button class="btn" style="width:100%;background:#fff;color:#5e35b1;" onclick="photoMeal()">📷 Tirar / enviar foto do prato</button>
+      </div>
       <div class="card" id="mealnow-card">
         <h2 id="mealnow-title">🍽️ HORA DO ALMOÇO</h2>
         <div class="mut" id="mealnow-info" style="margin-bottom:10px;"></div>
@@ -308,6 +313,19 @@
   <button class="btn sec wide" style="margin-top:10px;" onclick="document.getElementById('plan-ov').classList.remove('on')">Fechar</button>
 </div></div>
 
+<!-- meal photo -->
+<input type="file" id="meal-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="onMealPhoto(this)">
+<div class="ov" id="mphoto-ov"><div class="ovcard">
+  <h3>📸 Foto da refeição</h3>
+  <div class="sub" id="mphoto-meal"></div>
+  <img id="mphoto-img" style="width:100%;border-radius:14px;display:none;margin-bottom:10px;max-height:230px;object-fit:cover;">
+  <div id="mphoto-result"></div>
+  <div class="row" style="gap:8px;margin-top:12px;">
+    <button class="btn sec" style="flex:1;" onclick="document.getElementById('meal-photo-input').click()">📷 Outra foto</button>
+    <button class="btn sec" style="flex:1;" onclick="document.getElementById('mphoto-ov').classList.remove('on')">Fechar</button>
+  </div>
+</div></div>
+
 <script>
 // ===================== DATA =====================
 const KEY='naturallife_v1';
@@ -391,6 +409,119 @@ const FOODS={
  'Beterraba':{kcal:43,p:1.6,c:10,f:0.2,al:['beterraba']},
  'Abóbora':{kcal:26,p:1,c:6.5,f:0.1,al:['abobora','abóbora']},
  'Água de coco':{kcal:19,p:0.7,c:3.7,f:0.2,unit:200,al:['agua de coco','água de coco']},
+ // ---- mais frutas ----
+ 'Abacaxi':{kcal:50,p:0.5,c:13,f:0.1,unit:140,al:['abacaxi','ananas']},
+ 'Manga':{kcal:60,p:0.8,c:15,f:0.4,unit:200,al:['manga']},
+ 'Melancia':{kcal:30,p:0.6,c:7.6,f:0.2,unit:300,al:['melancia']},
+ 'Melão':{kcal:34,p:0.8,c:8,f:0.2,unit:200,al:['melao','melão']},
+ 'Uva':{kcal:69,p:0.7,c:18,f:0.2,unit:80,al:['uva','uvas']},
+ 'Pera':{kcal:57,p:0.4,c:15,f:0.1,unit:160,al:['pera']},
+ 'Kiwi':{kcal:61,p:1.1,c:15,f:0.5,unit:75,al:['kiwi']},
+ 'Pêssego':{kcal:39,p:0.9,c:10,f:0.3,unit:150,al:['pessego','pêssego']},
+ 'Ameixa':{kcal:46,p:0.7,c:11,f:0.3,unit:65,al:['ameixa']},
+ 'Goiaba':{kcal:68,p:2.6,c:14,f:0.9,unit:150,al:['goiaba']},
+ 'Caju (fruta)':{kcal:43,p:0.8,c:10,f:0.2,unit:30,al:['caju']},
+ 'Maracujá':{kcal:97,p:2.2,c:23,f:0.7,unit:60,al:['maracuja','maracujá']},
+ 'Acerola':{kcal:32,p:0.4,c:8,f:0.2,unit:10,al:['acerola']},
+ 'Tangerina/mexerica':{kcal:53,p:0.8,c:13,f:0.3,unit:120,al:['tangerina','mexerica','bergamota','poncã','ponca']},
+ 'Limão':{kcal:29,p:1.1,c:9,f:0.3,unit:60,al:['limao','limão']},
+ 'Coco (polpa)':{kcal:354,p:3.3,c:15,f:33,unit:30,al:['coco']},
+ 'Açaí (polpa)':{kcal:58,p:0.8,c:6,f:3.9,unit:100,al:['acai','açaí']},
+ 'Uva passa':{kcal:299,p:3.1,c:79,f:0.5,unit:30,al:['uva passa','passas']},
+ 'Figo':{kcal:74,p:0.8,c:19,f:0.3,unit:50,al:['figo']},
+ // ---- mais legumes e verduras ----
+ 'Couve':{kcal:27,p:2.9,c:4.4,f:0.5,al:['couve']},
+ 'Espinafre':{kcal:23,p:2.9,c:3.6,f:0.4,al:['espinafre']},
+ 'Repolho':{kcal:25,p:1.3,c:5.8,f:0.1,al:['repolho']},
+ 'Couve-flor':{kcal:25,p:1.9,c:5,f:0.3,al:['couve flor','couve-flor']},
+ 'Pepino':{kcal:15,p:0.7,c:3.6,f:0.1,al:['pepino']},
+ 'Abobrinha':{kcal:17,p:1.2,c:3.1,f:0.3,al:['abobrinha']},
+ 'Berinjela':{kcal:25,p:1,c:6,f:0.2,al:['berinjela']},
+ 'Pimentão':{kcal:31,p:1,c:6,f:0.3,al:['pimentao','pimentão']},
+ 'Vagem':{kcal:31,p:1.8,c:7,f:0.2,al:['vagem']},
+ 'Quiabo':{kcal:33,p:1.9,c:7,f:0.2,al:['quiabo']},
+ 'Chuchu':{kcal:19,p:0.8,c:4.5,f:0.1,al:['chuchu']},
+ 'Rúcula':{kcal:25,p:2.6,c:3.7,f:0.7,al:['rucula','rúcula']},
+ 'Cebola':{kcal:40,p:1.1,c:9,f:0.1,unit:100,al:['cebola']},
+ 'Alho':{kcal:149,p:6.4,c:33,f:0.5,unit:5,al:['alho']},
+ 'Cogumelo':{kcal:22,p:3.1,c:3.3,f:0.3,al:['cogumelo','champignon','shimeji','shiitake']},
+ 'Palmito':{kcal:28,p:2.5,c:4.5,f:0.2,al:['palmito']},
+ 'Inhame':{kcal:118,p:1.5,c:28,f:0.2,al:['inhame','cara','cará']},
+ // ---- mais carnes e proteínas ----
+ 'Picanha':{kcal:240,p:26,c:0,f:15,al:['picanha']},
+ 'Filé mignon':{kcal:213,p:29,c:0,f:10,al:['file mignon','filé mignon','file']},
+ 'Costela bovina':{kcal:280,p:24,c:0,f:20,al:['costela']},
+ 'Coxa/sobrecoxa de frango':{kcal:209,p:26,c:0,f:11,unit:120,al:['coxa','sobrecoxa','frango assado']},
+ 'Asa de frango':{kcal:203,p:30,c:0,f:8,unit:40,al:['asa de frango','asinha']},
+ 'Carne de porco (lombo)':{kcal:242,p:27,c:0,f:14,al:['porco','lombo','pernil']},
+ 'Linguiça':{kcal:296,p:16,c:2,f:25,unit:60,al:['linguica','linguiça']},
+ 'Bacon':{kcal:541,p:37,c:1.4,f:42,unit:10,al:['bacon']},
+ 'Presunto':{kcal:145,p:18,c:1.5,f:7,unit:15,al:['presunto']},
+ 'Mortadela':{kcal:311,p:16,c:3,f:25,unit:20,al:['mortadela']},
+ 'Salsicha':{kcal:260,p:12,c:3,f:23,unit:50,al:['salsicha']},
+ 'Nuggets de frango':{kcal:296,p:15,c:18,f:19,unit:18,al:['nuggets','nugget']},
+ 'Camarão':{kcal:99,p:24,c:0.2,f:0.3,al:['camarao','camarão']},
+ 'Bacalhau':{kcal:105,p:23,c:0,f:0.9,al:['bacalhau']},
+ 'Merluza':{kcal:90,p:18,c:0,f:1.3,al:['merluza','pescada']},
+ 'Ovo de codorna':{kcal:158,p:13,c:0.4,f:11,unit:10,al:['codorna','ovo de codorna']},
+ 'Fígado bovino':{kcal:135,p:20,c:3.9,f:3.6,al:['figado','fígado']},
+ // ---- mais carboidratos / pães / massas ----
+ 'Pão de queijo':{kcal:290,p:5,c:35,f:14,unit:30,al:['pao de queijo','pão de queijo']},
+ 'Torrada':{kcal:380,p:11,c:73,f:5,unit:8,al:['torrada','torradas']},
+ 'Biscoito cream cracker':{kcal:432,p:9,c:69,f:13,unit:7,al:['cream cracker','bolacha agua e sal','biscoito salgado']},
+ 'Biscoito recheado':{kcal:471,p:6,c:70,f:19,unit:12,al:['biscoito recheado','bolacha recheada','oreo']},
+ 'Polenta':{kcal:85,p:2,c:18,f:0.5,al:['polenta']},
+ 'Pipoca':{kcal:387,p:13,c:78,f:4.5,unit:20,al:['pipoca']},
+ 'Farofa':{kcal:407,p:3,c:78,f:9,unit:30,al:['farofa','farinha de mandioca','farinha']},
+ 'Inhame/cará cozido':{kcal:116,p:1.5,c:27,f:0.2,al:['cara cozido']},
+ 'Pão de forma branco':{kcal:265,p:8,c:49,f:3.6,unit:25,al:['pao de forma branco']},
+ 'Croissant':{kcal:406,p:8,c:46,f:21,unit:60,al:['croissant']},
+ 'Bolo simples':{kcal:340,p:5,c:55,f:11,unit:80,al:['bolo']},
+ 'Panqueca':{kcal:227,p:6,c:28,f:9,unit:60,al:['panqueca']},
+ 'Arroz à grega/temperado':{kcal:140,p:3,c:28,f:2,al:['arroz a grega','arroz temperado']},
+ 'Sushi (unidade)':{kcal:150,p:4,c:30,f:1.5,unit:30,al:['sushi','temaki','sashimi','niguiri']},
+ // ---- laticínios e derivados ----
+ 'Queijo prato':{kcal:360,p:26,c:1.9,f:28,unit:20,al:['queijo prato']},
+ 'Queijo parmesão':{kcal:431,p:36,c:4,f:29,unit:10,al:['parmesao','parmesão']},
+ 'Queijo coalho':{kcal:330,p:24,c:2,f:25,unit:40,al:['queijo coalho']},
+ 'Creme de leite':{kcal:212,p:2.5,c:4,f:20,unit:30,al:['creme de leite']},
+ 'Leite condensado':{kcal:321,p:7.9,c:54,f:8.7,unit:20,al:['leite condensado']},
+ 'Doce de leite':{kcal:315,p:6,c:55,f:7,unit:20,al:['doce de leite']},
+ 'Sorvete':{kcal:207,p:3.5,c:24,f:11,unit:60,al:['sorvete']},
+ 'Achocolatado em pó':{kcal:400,p:4,c:88,f:3,unit:20,al:['achocolatado','nescau','toddy']},
+ 'Manteiga de garrafa':{kcal:884,p:0,c:0,f:100,unit:8,al:['manteiga de garrafa']},
+ // ---- doces / sobremesas ----
+ 'Brigadeiro':{kcal:390,p:4,c:55,f:17,unit:20,al:['brigadeiro']},
+ 'Paçoca':{kcal:472,p:13,c:54,f:23,unit:20,al:['pacoca','paçoca']},
+ 'Pudim':{kcal:150,p:5,c:25,f:4,unit:100,al:['pudim']},
+ 'Gelatina':{kcal:62,p:1.2,c:14,f:0,unit:120,al:['gelatina']},
+ 'Mel/geleia':{kcal:278,p:0.5,c:70,f:0,unit:20,al:['geleia']},
+ 'Bombom/chocolate ao leite':{kcal:535,p:7.7,c:59,f:30,unit:15,al:['bombom','chocolate ao leite']},
+ 'Sonho/donut':{kcal:350,p:6,c:45,f:16,unit:70,al:['sonho','donut','rosquinha']},
+ // ---- salgados / fast food ----
+ 'Coxinha':{kcal:260,p:8,c:28,f:13,unit:80,al:['coxinha']},
+ 'Pastel':{kcal:320,p:7,c:30,f:19,unit:80,al:['pastel']},
+ 'Esfiha':{kcal:240,p:9,c:30,f:9,unit:80,al:['esfiha','esfirra']},
+ 'Empada':{kcal:320,p:6,c:30,f:19,unit:60,al:['empada','empadinha']},
+ 'Cachorro-quente':{kcal:250,p:9,c:28,f:11,unit:150,al:['cachorro quente','dog','hot dog']},
+ 'Batata frita':{kcal:312,p:3.4,c:41,f:15,unit:120,al:['batata frita','fritas']},
+ 'Lasanha':{kcal:160,p:8,c:14,f:8,unit:250,al:['lasanha']},
+ 'Pão de alho':{kcal:330,p:7,c:40,f:15,unit:40,al:['pao de alho','pão de alho']},
+ 'Misto quente':{kcal:280,p:13,c:28,f:13,unit:120,al:['misto quente','misto','sanduiche']},
+ 'Tapioca recheada':{kcal:230,p:7,c:35,f:7,unit:120,al:['tapioca recheada']},
+ // ---- bebidas ----
+ 'Cerveja':{kcal:43,p:0.5,c:3.6,f:0,unit:350,al:['cerveja']},
+ 'Vinho':{kcal:83,p:0.1,c:2.6,f:0,unit:150,al:['vinho']},
+ 'Vitamina/smoothie':{kcal:80,p:2,c:16,f:1,unit:300,al:['vitamina','smoothie','batida de fruta']},
+ 'Energético':{kcal:45,p:0,c:11,f:0,unit:250,al:['energetico','energético','red bull','monster']},
+ 'Chá (sem açúcar)':{kcal:1,p:0,c:0.2,f:0,unit:200,al:['cha','chá']},
+ 'Cappuccino':{kcal:75,p:3,c:11,f:2.5,unit:200,al:['cappuccino','capuccino']},
+ // ---- condimentos / molhos ----
+ 'Ketchup':{kcal:112,p:1.3,c:27,f:0.1,unit:15,al:['ketchup','catchup']},
+ 'Maionese':{kcal:680,p:1,c:2,f:75,unit:15,al:['maionese']},
+ 'Mostarda':{kcal:66,p:4,c:6,f:3.3,unit:10,al:['mostarda']},
+ 'Molho de tomate':{kcal:32,p:1.6,c:7,f:0.2,unit:60,al:['molho de tomate','molho']},
+ 'Shoyu':{kcal:53,p:8,c:5,f:0.1,unit:10,al:['shoyu','molho de soja']},
 };
 const FKEYS=Object.keys(FOODS);
 function findFood(q){ q=norm(q); for(const k of FKEYS){ if(norm(k).includes(q)) return k; const f=FOODS[k]; if(f.al) for(const a of f.al) if(norm(a)===q||q.includes(norm(a))) return k; } return null; }
@@ -1111,9 +1242,36 @@ function onPhoto(input){
   reader.readAsDataURL(file);
 }
 function addPhotoFood(){ const s=window._scanFood; if(!s)return; day().meals[curMeal].push({name:s.name,grams:1,kcal:Math.round(s.kcal),p:+(+s.p).toFixed(1),c:+(+s.c).toFixed(1),f:+(+s.f).toFixed(1)}); save(); renderAll(); document.getElementById('photo-result').innerHTML=''; closeFood(); }
+// ---- foto da refeicao (destaque, calcula o prato inteiro) ----
+const MEAL_PT={cafe:'Café da manhã',almoco:'Almoço',lanche:'Lanche',jantar:'Jantar'};
+function photoMeal(){ curMeal=mealByTime(); document.getElementById('meal-photo-input').click(); }
+function onMealPhoto(input){
+  const file=input.files&&input.files[0]; input.value=''; if(!file)return;
+  const ov=document.getElementById('mphoto-ov'); ov.classList.add('on');
+  document.getElementById('mphoto-meal').textContent='Vou registrar no: '+(MEAL_PT[curMeal]||'Refeição')+' 🍽️';
+  const res=document.getElementById('mphoto-result'); const imgEl=document.getElementById('mphoto-img');
+  if(!aiConnected()){ imgEl.style.display='none'; res.innerHTML='<div class="mut">📸 A IA inteligente não está ativa agora (sem internet?). Tente novamente em instantes, ou adicione os alimentos pela busca. 🙂</div>'; return; }
+  res.innerHTML='<div class="mut">📸 Analisando seu prato… (pode levar uns segundos)</div>';
+  const reader=new FileReader();
+  reader.onload=()=>{ const dataUrl=reader.result; imgEl.src=dataUrl; imgEl.style.display='block';
+    visionEstimate(dataUrl).then(o=>{
+      if(!o){ res.innerHTML='<div class="mut">😕 Não consegui identificar a comida nessa foto. Tente outra (mais de perto e iluminada) ou use a busca.</div>'; return; }
+      window._mphotoFood=o;
+      res.innerHTML='<div class="rcard" style="cursor:default;"><div class="rt">🍽️ '+o.name+'</div><div class="rk" style="margin:4px 0;">estimativa do prato inteiro:</div>'
+        +'<div class="row" style="text-align:center;gap:6px;"><div style="flex:1;"><div style="font-weight:800;color:var(--g);font-size:20px;">'+o.kcal+'</div><div class="mut">kcal</div></div>'
+        +'<div style="flex:1;"><div style="font-weight:800;color:var(--p);font-size:18px;">'+o.p+'g</div><div class="mut">prot</div></div>'
+        +'<div style="flex:1;"><div style="font-weight:800;color:var(--c);font-size:18px;">'+o.c+'g</div><div class="mut">carbo</div></div>'
+        +'<div style="flex:1;"><div style="font-weight:800;color:var(--f);font-size:18px;">'+o.f+'g</div><div class="mut">gord</div></div></div>'
+        +'<button class="btn wide" style="margin-top:12px;" onclick="addMealPhoto()">＋ Registrar no '+(MEAL_PT[curMeal]||'diário')+'</button>'
+        +'<div class="mut" style="text-align:center;margin-top:6px;font-size:11px;">É uma estimativa da IA — ajuste depois se precisar.</div></div>';
+    }).catch(e=>{ res.innerHTML='<div class="mut">⚠️ Erro ao analisar: '+(e.message||e)+'. Tente de novo.</div>'; });
+  };
+  reader.readAsDataURL(file);
+}
+function addMealPhoto(){ const o=window._mphotoFood; if(!o)return; day().meals[curMeal].push({name:'📸 '+o.name,grams:1,kcal:Math.round(o.kcal),p:+(+o.p).toFixed(1),c:+(+o.c).toFixed(1),f:+(+o.f).toFixed(1)}); save(); renderAll(); document.getElementById('mphoto-ov').classList.remove('on'); go('hoje'); }
 async function visionEstimate(dataUrl){
   const ai=effAI()||{prov:'gemini',key:''}; const key=(ai.key||'').trim();
-  const prompt='Analise a foto de comida e ESTIME a porção visível. Responda APENAS com um JSON puro, sem texto extra, no formato: {"name":"nome do prato em português","kcal":número,"p":gramas_proteina,"c":gramas_carbo,"f":gramas_gordura}. Se não houver comida, responda {"name":""}.';
+  const prompt='Você é um nutricionista analisando a foto de uma REFEIÇÃO. Identifique TODOS os alimentos visíveis no prato e estime a porção de cada um, depois SOME tudo. Responda APENAS com JSON puro, sem texto extra, no formato: {"name":"resumo curto do prato em português (liste os principais itens)","kcal":total_calorias,"p":total_proteina_g,"c":total_carbo_g,"f":total_gordura_g}. Se não houver comida na foto, responda {"name":""}.';
   let txt;
   if(ai.prov==='gemini'){
     const b64=dataUrl.split(',')[1]; const mime=(dataUrl.match(/^data:(.*?);/)||[])[1]||'image/jpeg';

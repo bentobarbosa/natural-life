@@ -316,6 +316,17 @@
 
 <!-- meal photo -->
 <input type="file" id="meal-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="onMealPhoto(this)">
+<div class="ov" id="mealpick-ov"><div class="ovcard">
+  <h3>📸 Foto da refeição</h3>
+  <div class="sub">Pra qual refeição é essa foto?</div>
+  <div class="opts">
+    <div class="opt" onclick="pickPhotoMeal('cafe')">☕ Café da manhã</div>
+    <div class="opt" onclick="pickPhotoMeal('almoco')">🍽️ Almoço</div>
+    <div class="opt" onclick="pickPhotoMeal('lanche')">🍎 Lanche</div>
+    <div class="opt" onclick="pickPhotoMeal('jantar')">🌙 Jantar</div>
+  </div>
+  <button class="btn sec wide" style="margin-top:10px;" onclick="document.getElementById('mealpick-ov').classList.remove('on')">Cancelar</button>
+</div></div>
 <div class="ov" id="mphoto-ov"><div class="ovcard">
   <h3>📸 Foto da refeição</h3>
   <div class="sub" id="mphoto-meal"></div>
@@ -1399,11 +1410,16 @@ function onPhoto(input){
 function addPhotoFood(){ const s=window._scanFood; if(!s)return; day().meals[curMeal].push({name:s.name,grams:1,kcal:Math.round(s.kcal),p:+(+s.p).toFixed(1),c:+(+s.c).toFixed(1),f:+(+s.f).toFixed(1)}); save(); renderAll(); document.getElementById('photo-result').innerHTML=''; closeFood(); }
 // ---- foto da refeicao (destaque, calcula o prato inteiro) ----
 const MEAL_PT={cafe:'Café da manhã',almoco:'Almoço',lanche:'Lanche',jantar:'Jantar'};
-function photoMeal(){ curMeal=mealByTime(); document.getElementById('meal-photo-input').click(); }
+function photoMeal(){ curMeal=mealByTime(); document.getElementById('mealpick-ov').classList.add('on'); }
+function pickPhotoMeal(meal){ curMeal=meal; document.getElementById('mealpick-ov').classList.remove('on'); document.getElementById('meal-photo-input').click(); }
+function renderMphotoMeal(){ const el=document.getElementById('mphoto-meal'); if(!el)return; const meals=[['cafe','☕ Café'],['almoco','🍽️ Almoço'],['lanche','🍎 Lanche'],['jantar','🌙 Jantar']];
+  el.innerHTML='<div style="margin-bottom:4px;">Registrar em qual refeição? (toque pra trocar)</div>'+meals.map(([k,lbl])=>`<span class="pill" style="${curMeal===k?'background:var(--g);color:#fff;':''}" onclick="setMphotoMeal('${k}')">${lbl}</span>`).join('');
+  const b=document.getElementById('mphoto-addbtn'); if(b) b.textContent='＋ Registrar no '+(MEAL_PT[curMeal]||'diário'); }
+function setMphotoMeal(meal){ curMeal=meal; renderMphotoMeal(); }
 function onMealPhoto(input){
   const file=input.files&&input.files[0]; input.value=''; if(!file)return;
   const ov=document.getElementById('mphoto-ov'); ov.classList.add('on');
-  document.getElementById('mphoto-meal').textContent='Vou registrar no: '+(MEAL_PT[curMeal]||'Refeição')+' 🍽️';
+  renderMphotoMeal();
   const res=document.getElementById('mphoto-result'); const imgEl=document.getElementById('mphoto-img');
   if(!aiConnected()){ imgEl.style.display='none'; res.innerHTML='<div class="mut">📸 A IA inteligente não está ativa agora (sem internet?). Tente novamente em instantes, ou adicione os alimentos pela busca. 🙂</div>'; return; }
   res.innerHTML='<div class="mut">📸 Analisando seu prato… (pode levar uns segundos)</div>';
@@ -1417,7 +1433,7 @@ function onMealPhoto(input){
         +'<div style="flex:1;"><div style="font-weight:800;color:var(--p);font-size:18px;">'+o.p+'g</div><div class="mut">prot</div></div>'
         +'<div style="flex:1;"><div style="font-weight:800;color:var(--c);font-size:18px;">'+o.c+'g</div><div class="mut">carbo</div></div>'
         +'<div style="flex:1;"><div style="font-weight:800;color:var(--f);font-size:18px;">'+o.f+'g</div><div class="mut">gord</div></div></div>'
-        +'<button class="btn wide" style="margin-top:12px;" onclick="addMealPhoto()">＋ Registrar no '+(MEAL_PT[curMeal]||'diário')+'</button>'
+        +'<button class="btn wide" id="mphoto-addbtn" style="margin-top:12px;" onclick="addMealPhoto()">＋ Registrar no '+(MEAL_PT[curMeal]||'diário')+'</button>'
         +'<div class="mut" style="text-align:center;margin-top:6px;font-size:11px;">É uma estimativa da IA — ajuste depois se precisar.</div></div>';
     }).catch(e=>{ res.innerHTML='<div class="mut">⚠️ Erro ao analisar: '+(e.message||e)+'. Tente de novo.</div>'; });
   };

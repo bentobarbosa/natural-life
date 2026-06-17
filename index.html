@@ -1541,26 +1541,46 @@ function obFinish(){
 function skipOb(){ document.getElementById('ob-ov').classList.remove('on'); document.getElementById('intro').classList.remove('on'); go('hoje'); }
 
 // ===================== BARCODE SCANNER =====================
-let scanStream=null,scanRun=false,barcodeDet=null;
+let scanStream=null,scanRun=false,barcodeDet=null,zxingReader=null;
+function loadZXing(){ return new Promise((res,rej)=>{ if(window.ZXing&&ZXing.BrowserMultiFormatReader) return res(); const s=document.createElement('script'); s.src='https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js'; s.onload=()=>res(); s.onerror=()=>rej(new Error('zxing')); document.head.appendChild(s); }); }
+function camFail(text){ scanRun=false; stopScanCam(); const v=document.getElementById('scan-vid'); if(v)v.style.display='none'; document.getElementById('scan-manual').style.display='block'; document.getElementById('scan-msg').textContent=text; }
+function stopScanCam(){ try{ if(zxingReader){ zxingReader.reset(); zxingReader=null; } }catch(e){} if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; } }
 async function openScanner(){
+  scanBusy=false;
   document.getElementById('scan-ov').classList.add('on'); document.getElementById('scan-result').innerHTML='';
-  const msg=document.getElementById('scan-msg');
-  if(!('BarcodeDetector' in window)){ document.getElementById('scan-manual').style.display='block'; msg.textContent='Seu navegador não detecta código pela câmera. Digite o número do código de barras abaixo:'; document.getElementById('scan-vid').style.display='none'; return; }
+  const msg=document.getElementById('scan-msg'); const vid=document.getElementById('scan-vid'); const manual=document.getElementById('scan-manual');
+  manual.style.display='none'; vid.style.display='block'; msg.textContent='📷 Abrindo a câmera… aponte para o código de barras.';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){
+    camFail('A câmera só funciona em https (no celular use o link bentobarbosa.github.io). Digite o código abaixo:'); return;
+  }
   try{
-    barcodeDet=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
-    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    const vid=document.getElementById('scan-vid'); vid.style.display='block'; vid.srcObject=scanStream; await vid.play(); scanRun=true; scanLoop();
-  }catch(e){ document.getElementById('scan-manual').style.display='block'; document.getElementById('scan-vid').style.display='none'; msg.textContent='Não consegui acessar a câmera. Digite o código de barras abaixo:'; }
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    vid.setAttribute('playsinline','true'); vid.muted=true; vid.srcObject=scanStream; await vid.play();
+  }catch(e){ camFail('Não consegui acessar a câmera (permissão negada?). Toque em "Permitir" ou digite o código:'); return; }
+  // tenta a API nativa primeiro (rápida); senão usa a ZXing
+  if('BarcodeDetector' in window){
+    try{ barcodeDet=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']}); scanRun=true; scanLoop(); return; }catch(e){}
+  }
+  try{
+    await loadZXing(); zxingReader=new ZXing.BrowserMultiFormatReader();
+    zxingReader.decodeFromVideoElement(vid,(result)=>{ if(result){ const c=result.getText&&result.getText()||result.text; if(c){ lookupBarcode(c); } } });
+  }catch(e){ camFail('Não consegui iniciar o leitor agora (sem internet?). Digite o código abaixo:'); }
 }
 async function scanLoop(){
   if(!scanRun) return; const vid=document.getElementById('scan-vid');
   try{ const codes=await barcodeDet.detect(vid); if(codes&&codes.length){ scanRun=false; lookupBarcode(codes[0].rawValue); return; } }catch(e){}
   requestAnimationFrame(scanLoop);
 }
-function closeScanner(){ scanRun=false; if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; } document.getElementById('scan-ov').classList.remove('on'); }
+function closeScanner(){ scanRun=false; stopScanCam(); document.getElementById('scan-ov').classList.remove('on'); }
+let scanBusy=false;
 async function lookupBarcode(code){
   code=(code||'').replace(/\D/g,''); if(!code){return;}
+  if(scanBusy) return; scanBusy=true;
+  scanRun=false; stopScanCam(); const v=document.getElementById('scan-vid'); if(v)v.style.display='none'; document.getElementById('scan-msg').textContent='✅ Código lido!';
   const r=document.getElementById('scan-result'); r.innerHTML='<div class="mut">🔎 Buscando '+code+'…</div>';
+  try{ await _lookupBarcodeInner(code,r); } finally { scanBusy=false; }
+}
+async function _lookupBarcodeInner(code,r){
   try{
     const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,brands,nutriments');
     const j=await res.json();

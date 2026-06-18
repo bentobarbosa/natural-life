@@ -306,8 +306,12 @@
         <h2>➕ ADICIONAR EXERCÍCIO</h2>
         <label>Atividade</label>
         <select id="ex-type" onchange="exPreview()"></select>
-        <div class="row" style="margin-top:8px;"><div style="flex:1;"><label>Minutos</label><input id="ex-min" type="number" inputmode="numeric" value="30" oninput="exPreview()"></div><button class="btn" style="align-self:flex-end;" onclick="addExFromForm()">Adicionar</button></div>
-        <div class="mut" id="ex-preview" style="margin-top:8px;"></div>
+        <div class="row" style="margin-top:8px;gap:8px;">
+          <div style="flex:1;"><label>Duração</label><input id="ex-min" type="number" inputmode="decimal" value="30" oninput="exPreview()"></div>
+          <div style="flex:1.1;"><label>Unidade</label><select id="ex-unit" onchange="exPreview()"><option value="min">minutos</option><option value="h">horas</option></select></div>
+          <div style="width:64px;"><label>Vezes</label><input id="ex-times" type="number" inputmode="numeric" value="1" oninput="exPreview()"></div>
+        </div>
+        <div class="row" style="margin-top:8px;align-items:center;"><div class="mut" id="ex-preview" style="flex:1;"></div><button class="btn" onclick="addExFromForm()">Adicionar</button></div>
       </div>
       <div class="card"><h2>📋 EXERCÍCIOS DE HOJE</h2><div id="ex-list"></div></div>
     </section>
@@ -835,7 +839,8 @@ const EXKEYS=Object.keys(EXS);
 function findEx(q){ q=norm(q); for(const k of EXKEYS){ if(norm(k).includes(q)) return k; for(const a of EXS[k].al) if(q.includes(norm(a))) return k; } return null; }
 function exKcalPerMin(key){ const w=(state.profile&&state.profile.w)||70; return EXS[key].met*3.5*w/200; }
 function burned(d){ const e=day(d).ex||[]; return Math.round(e.reduce((s,x)=>s+x.kcal,0)); }
-function addExercise(key,min){ const dd=day(); if(!dd.ex)dd.ex=[]; dd.ex.push({name:key,min,kcal:Math.round(exKcalPerMin(key)*min)}); save(); renderAll(); }
+function durLabel(min){ min=Math.round(min); if(min>=60){ const h=Math.floor(min/60), m=min%60; return h+'h'+(m?(' '+m+'min'):''); } return min+'min'; }
+function addExercise(key,min,times){ times=times||1; const dd=day(); if(!dd.ex)dd.ex=[]; dd.ex.push({name:key,min,times,kcal:Math.round(exKcalPerMin(key)*min*times)}); save(); renderAll(); }
 function removeExercise(i){ const dd=day(); dd.ex.splice(i,1); save(); renderAll(); }
 function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 
@@ -908,11 +913,12 @@ function renderTreino(){
   const sel=document.getElementById('ex-type'); if(sel && !sel.options.length){ sel.innerHTML=EXKEYS.map(k=>`<option value="${k}">${k}</option>`).join(''); }
   exPreview();
   const e=day().ex||[]; const list=document.getElementById('ex-list');
-  list.innerHTML = e.length? e.map((x,i)=>`<div class="fitem"><div><div class="nm">${x.name}</div><div class="mc">${x.min} min · 🔥 ${x.kcal} kcal</div></div><span class="x" onclick="removeExercise(${i})">✕</span></div>`).join('') : '<div class="mut">Nenhum exercício hoje. Bora treinar! 💪</div>';
+  list.innerHTML = e.length? e.map((x,i)=>`<div class="fitem"><div><div class="nm">${x.name}</div><div class="mc">${x.times>1?(x.times+'× '):''}${durLabel(x.min)} · 🔥 ${x.kcal} kcal</div></div><span class="x" onclick="removeExercise(${i})">✕</span></div>`).join('') : '<div class="mut">Nenhum exercício hoje. Bora treinar! 💪</div>';
   renderWorkout();
 }
-function exPreview(){ const sel=document.getElementById('ex-type'); const min=+document.getElementById('ex-min').value||0; const pv=document.getElementById('ex-preview'); if(!sel||!sel.value||!pv) return; pv.textContent='≈ '+Math.round(exKcalPerMin(sel.value)*min)+' kcal em '+min+' min'; }
-function addExFromForm(){ const sel=document.getElementById('ex-type'); const min=+document.getElementById('ex-min').value; if(!min||min<1){return;} addExercise(sel.value,min); }
+function exDurMin(){ const v=+document.getElementById('ex-min').value||0; const u=(document.getElementById('ex-unit')||{}).value; return u==='h'? v*60 : v; }
+function exPreview(){ const sel=document.getElementById('ex-type'); const pv=document.getElementById('ex-preview'); if(!sel||!sel.value||!pv) return; const min=exDurMin(); const times=Math.max(1,+(document.getElementById('ex-times')||{}).value||1); const kc=Math.round(exKcalPerMin(sel.value)*min*times); pv.textContent='≈ '+kc+' kcal'+(times>1?(' ('+times+'× '+durLabel(min)+')'):(' em '+durLabel(min))); }
+function addExFromForm(){ const sel=document.getElementById('ex-type'); const min=exDurMin(); const times=Math.max(1,+(document.getElementById('ex-times')||{}).value||1); if(!min||min<1){return;} addExercise(sel.value,min,times); document.getElementById('ex-times').value=1; }
 function macroBar(name,val,goal,col){ const pct=goal?Math.min(100,val/goal*100):0; return `<div class="macro"><div class="top"><span>${name}</span><span>${val}${goal?' / '+goal:''} g</span></div><div class="bar"><i style="width:${pct}%;background:${col}"></i></div></div>`; }
 function renderHoje(){
   const t=totals(), g=state.goals, b=burned(), eff=g?g.kcal+b:0;

@@ -442,6 +442,9 @@
 <script>
 // ===================== DATA =====================
 const KEY='naturallife_v1';
+// RESET GLOBAL: ao mudar esta data, TODOS os usuários começam do zero no próximo acesso
+const RESETV='2026-06-18';
+try{ if(localStorage.getItem('naturallife_resetv')!==RESETV){ localStorage.removeItem(KEY); localStorage.removeItem('installDismissed'); localStorage.setItem('naturallife_resetv',RESETV); } }catch(e){}
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();

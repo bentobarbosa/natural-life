@@ -269,7 +269,10 @@
         <div class="row"><div style="flex:1;"><label>Peso (kg)</label><input id="i-weight" type="number" inputmode="decimal" placeholder="70"></div><div style="flex:1;"><label>Altura (cm)</label><input id="i-height" type="number" inputmode="numeric" placeholder="175"></div></div>
         <div class="row"><div style="flex:1;"><label>Idade</label><input id="i-age" type="number" inputmode="numeric" placeholder="25"></div><div style="flex:1;"><label>Sexo</label><select id="i-sex"><option value="m">Homem</option><option value="f">Mulher</option></select></div></div>
         <label>Nível de atividade</label>
-        <select id="i-act"><option value="1.2">Sedentário (pouco/nenhum exercício)</option><option value="1.375">Leve (1-3x/semana)</option><option value="1.55" selected>Moderado (3-5x/semana)</option><option value="1.725">Intenso (6-7x/semana)</option><option value="1.9">Muito intenso (atleta)</option></select>
+        <div class="row" style="gap:8px;">
+          <div style="flex:1;"><label style="font-weight:600;color:var(--mut);">Treinos por semana</label><select id="i-freq"><option value="0">Não treino</option><option value="1">1x</option><option value="2">2x</option><option value="3" selected>3x</option><option value="4">4x</option><option value="5">5x</option><option value="6">6x</option><option value="7">7x (todo dia)</option></select></div>
+          <div style="flex:1;"><label style="font-weight:600;color:var(--mut);">Horas por treino</label><select id="i-hours"><option value="0.5">30 min</option><option value="1" selected>1 hora</option><option value="1.5">1h30</option><option value="2">2 horas</option><option value="3">3h ou +</option></select></div>
+        </div>
         <label>Objetivo</label>
         <select id="i-goal"><option value="lose">Emagrecer (perder gordura) 🔻</option><option value="recomp">Definir (perder gordura + manter músculo) ✨</option><option value="maintain" selected>Manter ⚖️</option><option value="gain">Ganhar músculo 💪</option><option value="bulk">Crescer / ganhar peso 🔺</option></select>
         <button class="btn wide" style="margin-top:14px;" onclick="calcGoals()">CALCULAR METAS</button>
@@ -867,9 +870,12 @@ function entryScore(e){ let per; if(e&&e.grams>1){ const k=100/e.grams; per={kca
 function hbadge(s){ return '<span class="hscore" style="background:'+healthColor(s)+'">'+s+'</span>'; }
 
 // ===================== GOALS =====================
+function actFromFreqHours(freq,hours){ const wh=(+freq||0)*(+hours||0); return Math.max(1.2, Math.min(1.9, 1.2 + Math.min(0.7, wh/20))); }
 function calcGoals(){
   const w=+document.getElementById('i-weight').value, h=+document.getElementById('i-height').value, a=+document.getElementById('i-age').value;
-  const sex=document.getElementById('i-sex').value, act=+document.getElementById('i-act').value, goal=document.getElementById('i-goal').value;
+  const sex=document.getElementById('i-sex').value, goal=document.getElementById('i-goal').value;
+  const freq=+document.getElementById('i-freq').value||0, hours=+document.getElementById('i-hours').value||0;
+  const act=actFromFreqHours(freq,hours);
   if(!w||!h||!a){ alert('Preencha peso, altura e idade.'); return; }
   const tmb=10*w+6.25*h-5*a+(sex==='m'?5:-161);
   let kcal=Math.round(tmb*act);
@@ -878,7 +884,7 @@ function calcGoals(){
   const protein=Math.round(w*(PMUL[goal]||1.6));
   const fat=Math.round(kcal*0.25/9);
   const carb=Math.round((kcal-protein*4-fat*9)/4);
-  state.profile={w,h,a,sex,act,goal}; state.goals={kcal,protein,carb,fat,tmb:Math.round(tmb)};
+  state.profile={w,h,a,sex,act,goal,freq,hours}; state.goals={kcal,protein,carb,fat,tmb:Math.round(tmb)};
   save(); renderGoalsOut(); renderAll();
 }
 function renderGoalsOut(){
@@ -1294,7 +1300,7 @@ function onboardInput(text){
   if(onboard.step===3){ d.sex=/mulher|fem/.test(t)?'f':'m'; onboard.step=4; addMsg('5️⃣ Quão ativo você é no dia a dia?','bot'); showOnboardChips(['Sedentário','Leve','Moderado','Intenso','Atleta']); return; }
   if(onboard.step===4){ const map=[['sedent',1.2],['leve',1.375],['moder',1.55],['intens',1.725],['atlet',1.9]]; let act=1.55; for(const [k,v] of map) if(t.includes(k)) act=v; d.act=act; onboard.step=5; addMsg('6️⃣ Por último: qual seu OBJETIVO?','bot'); showOnboardChips(['Emagrecer','Manter','Ganhar massa']); return; }
   if(onboard.step===5){ d.goal=/emagr|perder|secar|magr/.test(t)?'lose':/ganhar|massa|bulk|crescer/.test(t)?'gain':'maintain';
-    document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-act').value=d.act; document.getElementById('i-goal').value=d.goal;
+    document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-freq').value=3; document.getElementById('i-hours').value=1; document.getElementById('i-goal').value=d.goal;
     calcGoals(); onboard=null; buildChips(); const g=state.goals;
     addMsg('🎉 Prontinho, tudo configurado!\n\n🔥 Meta: '+g.kcal+' kcal/dia\n🥩 '+g.protein+'g proteína · 🍞 '+g.carb+'g carbo · 🥑 '+g.fat+'g gordura\n\nAgora você pode: registrar comida ("comi 2 ovos"), pedir um cardápio ("monte uma dieta"), ou tirar qualquer dúvida de nutrição/treino. Bora! 💪','bot');
     return;
@@ -1515,7 +1521,8 @@ const OB_STEPS=[
  {t:'📏 Sua altura',s:'Pra calcular suas calorias com precisão.',k:'h',type:'num',ph:'cm (ex: 175)',min:100,max:250},
  {t:'🎂 Sua idade',s:'O metabolismo muda com a idade.',k:'a',type:'num',ph:'anos (ex: 25)',min:8,max:110},
  {t:'⚧ Sexo biológico',s:'Afeta o cálculo do metabolismo.',k:'sex',type:'opt',opts:[['m','👨 Homem'],['f','👩 Mulher']]},
- {t:'🏃 Nível de atividade',s:'Quanto você se movimenta no dia a dia?',k:'act',type:'opt',opts:[['1.2','😴 Sedentário'],['1.375','🚶 Leve (1-3x/sem)'],['1.55','🏃 Moderado (3-5x/sem)'],['1.725','🔥 Intenso (6-7x/sem)'],['1.9','🏆 Atleta']]},
+ {t:'🏋️ Treinos por semana',s:'Quantos dias você treina/se exercita por semana?',k:'freq',type:'opt',opts:[['0','😴 Não treino'],['2','🚶 1-2x'],['4','🏃 3-4x'],['6','🔥 5-6x'],['7','🏆 Todo dia']]},
+ {t:'⏱️ Tempo por treino',s:'Em média, quanto dura cada treino?',k:'hours',type:'opt',opts:[['0.5','~30 min'],['1','~1 hora'],['1.5','~1h30'],['2','2h ou mais']]},
  {t:'🎯 Seu objetivo',s:'O que você quer alcançar? Vou ajustar suas calorias pra isso.',k:'goal',type:'opt',opts:[['lose','🔻 Emagrecer'],['recomp','✨ Definir'],['maintain','⚖️ Manter'],['gain','💪 Ganhar músculo'],['bulk','🔺 Crescer / ganhar peso']]},
 ];
 // ===================== INTRO / TUTORIAL / CONTA =====================
@@ -1583,7 +1590,7 @@ function introRestore(){
   state=data; save();
   document.getElementById('intro').classList.remove('on');
   applyDark(state.settings&&state.settings.dark); renderAll(); buildChips(); renderSavedChat(); renderGoalsOut&&renderGoalsOut();
-  if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; }
+  if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-freq').value=(state.profile.freq!==undefined?state.profile.freq:3); document.getElementById('i-hours').value=(state.profile.hours!==undefined?state.profile.hours:1); document.getElementById('i-goal').value=state.profile.goal; }
   go('hoje'); go('ia'); addMsg('✅ Conta recuperada! Bem-vindo de volta'+(state.account&&state.account.name?(', '+state.account.name.split(' ')[0]):'')+'! 🌿','bot');
 }
 let tutorMode=false;
@@ -1619,8 +1626,8 @@ function obNum(){ const st=OB_STEPS[ob.step]; const v=parseFloat((document.getEl
 function obPick(val){ const st=OB_STEPS[ob.step]; ob.d[st.k]=val; renderOb(); setTimeout(obAdvance,180); }
 function obAdvance(){ if(ob.step<OB_STEPS.length-1){ ob.step++; renderOb(); } else obFinish(); }
 function obFinish(){
-  const d=ob.d; if(!d.w||!d.h||!d.a){ skipOb(); return; } d.sex=d.sex||'m'; d.act=d.act||'1.55'; d.goal=d.goal||'maintain';
-  document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-act').value=d.act; document.getElementById('i-goal').value=d.goal;
+  const d=ob.d; if(!d.w||!d.h||!d.a){ skipOb(); return; } d.sex=d.sex||'m'; if(d.freq===undefined)d.freq=3; if(d.hours===undefined)d.hours=1; d.goal=d.goal||'maintain';
+  document.getElementById('i-weight').value=d.w; document.getElementById('i-height').value=d.h; document.getElementById('i-age').value=d.a; document.getElementById('i-sex').value=d.sex; document.getElementById('i-freq').value=d.freq; document.getElementById('i-hours').value=d.hours; document.getElementById('i-goal').value=d.goal;
   calcGoals(); document.getElementById('ob-ov').classList.remove('on'); document.getElementById('intro').classList.remove('on');
   if(!state.weights.length){ state.weights.push({date:todayStr(),kg:d.w}); save(); }
   go('ia'); const g=state.goals; const nm=(state.account&&state.account.name)?(', '+state.account.name.split(' ')[0]):'';
@@ -1920,7 +1927,7 @@ function applyPlanDay(di){
 // ===================== INIT =====================
 function init(){
   applyDark(state.settings.dark);
-  if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; renderGoalsOut(); }
+  if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-freq').value=(state.profile.freq!==undefined?state.profile.freq:3); document.getElementById('i-hours').value=(state.profile.hours!==undefined?state.profile.hours:1); document.getElementById('i-goal').value=state.profile.goal; renderGoalsOut(); }
   renderAll(); setAppMode(state.appMode||'nutri',true); go(NAV[appMode][0][0]); startReminders();
   if(!state.account && !state.profile){
     startIntro();

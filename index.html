@@ -438,7 +438,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; if(s.workout===undefined) s.workout=null; if(s.appMode!=='treino') s.appMode='nutri'; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chats){ s.chats={nutri:(s.chat&&s.chat.length?s.chat:[]),treino:[]}; } if(!s.chats.nutri)s.chats.nutri=[]; if(!s.chats.treino)s.chats.treino=[]; delete s.chat; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; if(s.workout===undefined) s.workout=null; if(s.appMode!=='treino') s.appMode='nutri'; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -1357,9 +1357,11 @@ function smartFallback(t){
   return base+'Algumas coisas que eu faço muito bem:\n\n📝 Registrar por texto: "comi 2 ovos e 100g de arroz" ou "fiz 30min de corrida"\n📊 "quanto falta hoje?" · "minhas metas"\n🍽️ "monte uma dieta" · "o que comer pra bater proteína" · "me dá uma receita"\n💬 Tirar dúvidas: emagrecer, ganhar massa, treino, suplementos, jejum, sono, platô, hábitos, e muito mais — é só perguntar!\n\n💡 Quer respostas livres sobre QUALQUER assunto, no nível de um ChatGPT? Toque na ⚙️ (engrenagem) e conecte uma IA real com sua chave — aí eu respondo de tudo, com o contexto do seu dia. 🚀';
 }
 function addMsg(text,who,noSave){ const c=document.getElementById('chat'); const d=document.createElement('div'); d.className='msg '+(who==='me'?'me':'bot'); d.textContent=text; c.appendChild(d); document.querySelector('main').scrollTop=1e9; if(!noSave) saveChatMsg(who,text); if(who==='bot'&&!noSave) speak(text); return d; }
-function saveChatMsg(who,text){ if(!state.chat)state.chat=[]; state.chat.push({w:who,t:text}); if(state.chat.length>60) state.chat=state.chat.slice(-60); save(); }
-function renderSavedChat(){ const c=document.getElementById('chat'); c.innerHTML=''; (state.chat||[]).forEach(m=>{ const d=document.createElement('div'); d.className='msg '+(m.w==='me'?'me':'bot'); d.textContent=m.t; c.appendChild(d); }); aiHistory=(state.chat||[]).filter(m=>m.w==='me'||m.w==='bot').slice(-10).map(m=>({role:m.w==='me'?'user':'assistant',content:m.t})); }
-function clearChat(){ state.chat=[]; aiHistory=[]; save(); document.getElementById('chat').innerHTML=''; document.getElementById('set-ov').classList.remove('on'); go('ia'); addMsg('🧹 Conversa apagada! Recomeçamos do zero. Como posso te ajudar? 🌿','bot'); }
+function curChat(){ if(!state.chats) state.chats={nutri:[],treino:[]}; if(!state.chats[appMode]) state.chats[appMode]=[]; return state.chats[appMode]; }
+function saveChatMsg(who,text){ const c=curChat(); c.push({w:who,t:text}); if(c.length>60) state.chats[appMode]=c.slice(-60); save(); }
+function renderSavedChat(){ const el=document.getElementById('chat'); if(!el)return; el.innerHTML=''; const c=curChat(); c.forEach(m=>{ const d=document.createElement('div'); d.className='msg '+(m.w==='me'?'me':'bot'); d.textContent=m.t; el.appendChild(d); }); aiHistory=c.slice(-10).map(m=>({role:m.w==='me'?'user':'assistant',content:m.t})); }
+function welcomeFor(m){ const nm=(state.account&&state.account.name)?(', '+state.account.name.split(' ')[0]):''; addMsg(m==='treino'?('💪 Oi'+nm+'! Sou seu Personal Trainer. Posso montar seu treino, ensinar exercícios, séries e progressão. Peça "monte meu treino" 🏋️'):('🥗 Oi'+nm+'! Sou sua Nutricionista. Posso montar sua dieta, calcular macros, avaliar alimentos e registrar comida (ex: "comi 2 ovos"). Bora! 🍽️'),'bot'); }
+function clearChat(){ state.chats[appMode]=[]; aiHistory=[]; save(); document.getElementById('chat').innerHTML=''; document.getElementById('set-ov').classList.remove('on'); go('ia'); welcomeFor(appMode); }
 function copyBackup(){ const code=encodeBackup(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(()=>alert('📋 Código de backup copiado! Cole num lugar seguro (ex: envie pro seu e-mail).'),()=>prompt('Copie seu código de backup:',code)); } else prompt('Copie seu código de backup:',code); }
 function emailBackup(){ const code=encodeBackup(); const to=(state.account&&state.account.email)||''; const sub=encodeURIComponent('Meu backup do natural.life'); const body=encodeURIComponent('Guarde este código. Pra recuperar sua conta, abra o app, toque em "Já tenho conta" (ou ⚙️ Restaurar) e cole o código abaixo:\n\n'+code); location.href='mailto:'+to+'?subject='+sub+'&body='+body; }
 function restoreFromSettings(){ const code=prompt('Cole o código de backup pra restaurar (isso vai substituir os dados atuais):'); if(!code)return; const data=decodeBackup(code); if(!data){ alert('Código inválido. Confira se copiou ele inteiro.'); return; } state=data; save(); location.reload(); }
@@ -1455,7 +1457,8 @@ function setAppMode(m,quiet){
   document.getElementById('v-ia').classList.toggle('treino',m==='treino');
   const inp=document.getElementById('ai-input'); if(inp) inp.placeholder=m==='treino'?'Pergunte ao personal ou peça um treino...':'Pergunte à nutri ou registre comida...';
   updateIaTitle(); buildChips(); renderNav();
-  if(!quiet){ if(state) save(); go(NAV[m][0][0]); }
+  renderSavedChat(); // mostra a conversa DESTA parte (nutri/treino são separadas)
+  if(!quiet){ if(state) save(); if(curChat().length===0) welcomeFor(m); go(NAV[m][0][0]); }
 }
 const CHIPS_NUTRI={core:['💡 Resumo de hoje','🍽️ Monte uma dieta','🍳 Receita fit'],pool:['🥩 Bater proteína','🔻 Como emagrecer','🔺 Ganhar massa','😴 Importância do sono','💊 Vale a pena creatina?','⏳ Jejum intermitente','📉 Travei (platô)','🍕 Posso ter refeição livre?','🧠 Como criar disciplina?','💧 Quanta água beber?','🥦 Dieta low carb','🍫 Vontade de doce','⚖️ Por que a balança oscila?','🐟 Ômega-3 e magnésio','🌱 Proteína vegetal']};
 const CHIPS_TREINO={core:['🏋️ Monte meu treino','🏠 Treino em casa','📈 Como evoluir no treino?'],pool:['💪 Treino de peito','🦵 Treino de pernas','🔙 Treino de costas','🏃 Quanto cardio fazer?','🤸 Aquecimento certo','😴 Quanto descanso?','🔥 Treino pra emagrecer','💥 O que é hipertrofia?','⏱️ Treino rápido (30min)','🧗 Calistenia','☕ Pré-treino natural','📅 Quantos dias treinar?','🦵 Agachamento correto','💢 Dor pós-treino (DOMS)']};
@@ -1904,10 +1907,8 @@ function init(){
     startIntro();
   } else if(!state.profile){
     document.getElementById('intro').classList.add('on'); introToProfile();
-  } else if(state.chat&&state.chat.length){
-    renderSavedChat();
-  } else {
-    addMsg('Oi de novo'+(state.account&&state.account.name?(', '+state.account.name.split(' ')[0]):'')+'! 🌿 Pode registrar comida ("comi 2 ovos"), treino ("fiz 30min de corrida"), tirar foto do prato, pedir um cardápio ou tirar qualquer dúvida. 💪','bot');
+  } else if(curChat().length===0){
+    welcomeFor(appMode);
   }
 }
 init();

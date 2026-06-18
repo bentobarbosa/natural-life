@@ -1,6 +1,6 @@
 {
-  "name": "natural.life — nutrição e treino com IA",
-  "short_name": "natural.life",
+  "name": "Nutrika — nutrição e treino com IA",
+  "short_name": "Nutrika",
   "description": "Seu nutricionista e personal trainer com IA: calorias, macros, treino, dieta e foto da refeição.",
   "lang": "pt-BR",
   "start_url": "./index.html",

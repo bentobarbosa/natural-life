@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>🌿 natural.life</title>
+<title>🌿 Nutrika</title>
 <!-- PWA / instalar no celular -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#2e7d32">
@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="natural.life">
+<meta name="apple-mobile-web-app-title" content="Nutrika">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:'Segoe UI',system-ui,Tahoma,sans-serif;}
   :root{--g:#2e7d32;--g2:#66bb6a;--g3:#a5d6a7;--bg:#f3f8f0;--card:#ffffff;--ink:#243024;--mut:#6b7b6b;--p:#42a5f5;--c:#ffb300;--f:#ec407a;}
@@ -212,7 +212,7 @@
 <div id="intro"><div class="intro-screen" id="intro-screen"></div></div>
 <div id="app">
   <header>
-    <div><h1>🌿 natural.life</h1><div class="date" id="hdr-date"></div></div>
+    <div><h1>🌿 Nutrika</h1><div class="date" id="hdr-date"></div></div>
     <div style="display:flex;align-items:center;gap:4px;">
       <div style="text-align:right;"><div style="font-size:11px;opacity:.85;">META</div><div style="font-size:18px;font-weight:800;" id="hdr-goal">— kcal</div></div>
       <button class="gear" onclick="openTutor()" title="Como usar o app">❓</button>
@@ -325,7 +325,7 @@
     </section>
   </main>
 
-  <div id="install-banner" style="display:none;"><span>📲 Instalar o natural.life no seu celular</span><div><button class="btn" id="install-btn" onclick="doInstall()">Instalar</button><span class="ib-x" onclick="dismissInstall()">✕</span></div></div>
+  <div id="install-banner" style="display:none;"><span>📲 Instalar o Nutrika no seu celular</span><div><button class="btn" id="install-btn" onclick="doInstall()">Instalar</button><span class="ib-x" onclick="dismissInstall()">✕</span></div></div>
   <nav id="mainnav"></nav>
 </div>
 
@@ -1109,7 +1109,7 @@ function go(v){ const tm=TAB_MODE[v]; if(tm&&tm!==appMode) setAppMode(tm,true); 
 
 // ===================== AI ASSISTANT =====================
 const KB=[
- {kw:['oi','ola','olá','eai','bom dia','boa tarde','boa noite'],a:()=>'Oi! 🌿 Sou o assistente do natural.life. Posso calcular seus macros, dizer quanto falta hoje, sugerir o que comer pra bater a meta, consultar calorias de alimentos — e você pode REGISTRAR comida só escrevendo (ex: "comi 2 ovos e 100g de arroz"). O que vamos fazer?'},
+ {kw:['oi','ola','olá','eai','bom dia','boa tarde','boa noite'],a:()=>'Oi! 🌿 Sou o assistente do Nutrika. Posso calcular seus macros, dizer quanto falta hoje, sugerir o que comer pra bater a meta, consultar calorias de alimentos — e você pode REGISTRAR comida só escrevendo (ex: "comi 2 ovos e 100g de arroz"). O que vamos fazer?'},
  {kw:['obrigad','valeu','vlw'],a:()=>'Por nada! 💪 Conte comigo pra cuidar da sua nutrição.'},
  {kw:['emagrecer','perder peso','perder barriga','secar','definir','déficit','deficit','cutting'],a:()=>'🔻 EMAGRECER: a base é o DÉFICIT calórico — comer um pouco menos do que gasta (uns 300–500 kcal/dia já dá resultado saudável de ~0,5kg/semana).\n• Mantenha a PROTEÍNA alta (preserva músculo e dá saciedade): ~2g por kg.\n• Priorize comida de verdade, fibras e água; corte líquido calórico (refri, suco, álcool).\n• Em "Metas" escolha "Emagrecer" que eu já tiro 500 kcal pra você. Treino de força acelera muito!'},
  {kw:['ganhar massa','hipertrofia','bulking','ganhar peso','crescer','volume'],a:()=>'🔺 GANHAR MASSA: precisa de SUPERÁVIT calórico (comer mais do que gasta, ~300–400 kcal a mais) + treino de força + proteína ~2g/kg.\n• Coma a cada 3–4h, inclua carbo nas refeições (energia pro treino).\n• Durma bem (o músculo cresce no descanso). Em "Metas" escolha "Ganhar massa".'},
@@ -1379,7 +1379,7 @@ function renderSavedChat(){ const el=document.getElementById('chat'); if(!el)ret
 function welcomeFor(m){ const nm=(state.account&&state.account.name)?(', '+state.account.name.split(' ')[0]):''; addMsg(m==='treino'?('💪 Oi'+nm+'! Sou seu Personal Trainer. Posso montar seu treino, ensinar exercícios, séries e progressão. Peça "monte meu treino" 🏋️'):('🥗 Oi'+nm+'! Sou sua Nutricionista. Posso montar sua dieta, calcular macros, avaliar alimentos e registrar comida (ex: "comi 2 ovos"). Bora! 🍽️'),'bot'); }
 function clearChat(){ state.chats[appMode]=[]; aiHistory=[]; save(); document.getElementById('chat').innerHTML=''; document.getElementById('set-ov').classList.remove('on'); go('ia'); welcomeFor(appMode); }
 function copyBackup(){ const code=encodeBackup(); if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(()=>alert('📋 Código de backup copiado! Cole num lugar seguro (ex: envie pro seu e-mail).'),()=>prompt('Copie seu código de backup:',code)); } else prompt('Copie seu código de backup:',code); }
-function emailBackup(){ const code=encodeBackup(); const to=(state.account&&state.account.email)||''; const sub=encodeURIComponent('Meu backup do natural.life'); const body=encodeURIComponent('Guarde este código. Pra recuperar sua conta, abra o app, toque em "Já tenho conta" (ou ⚙️ Restaurar) e cole o código abaixo:\n\n'+code); location.href='mailto:'+to+'?subject='+sub+'&body='+body; }
+function emailBackup(){ const code=encodeBackup(); const to=(state.account&&state.account.email)||''; const sub=encodeURIComponent('Meu backup do Nutrika'); const body=encodeURIComponent('Guarde este código. Pra recuperar sua conta, abra o app, toque em "Já tenho conta" (ou ⚙️ Restaurar) e cole o código abaixo:\n\n'+code); location.href='mailto:'+to+'?subject='+sub+'&body='+body; }
 function restoreFromSettings(){ const code=prompt('Cole o código de backup pra restaurar (isso vai substituir os dados atuais):'); if(!code)return; const data=decodeBackup(code); if(!data){ alert('Código inválido. Confira se copiou ele inteiro.'); return; } state=data; save(); location.reload(); }
 // text-to-speech (optional)
 function speak(text){ try{ if(!state.settings.tts||!('speechSynthesis'in window))return; const u=new SpeechSynthesisUtterance(text.replace(/[•🔥🥩🍞🥑🌿💪🍽️📊✅⚠️💡🎯🏋️🍳📅🛒🔄😴💊⏳📉🍕🧠💧🏠📈🥦🍫⚖️🐟🌱☕🔻🔺]/g,'')); u.lang='pt-BR'; u.rate=1.05; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
@@ -1426,8 +1426,8 @@ function aiContext(){
 }
 function aiSystem(){
   const persona = aiMode==='treino'
-   ? 'Você é o "Coach Natural", um PERSONAL TRAINER e educador físico de ELITE do app natural.life. Sua especialidade é TREINO: montar programas de treino, ensinar exercícios e técnica correta, séries/repetições, progressão de carga, divisões (ABC, push/pull/legs), treino em casa ou academia, aquecimento, cardio, recuperação e hipertrofia/emagrecimento pelo lado do exercício. Quando pedirem, MONTE um treino concreto (com exercícios, séries x reps).'
-   : 'Você é o "Nutri Natural", uma NUTRICIONISTA de ELITE do app natural.life. Sua especialidade é ALIMENTAÇÃO: montar dietas e cardápios, calorias e macros, escolhas de alimentos, suplementos, hidratação, e hábitos alimentares. Quando pedirem, MONTE uma dieta/cardápio concreto.';
+   ? 'Você é o "Coach Natural", um PERSONAL TRAINER e educador físico de ELITE do app Nutrika. Sua especialidade é TREINO: montar programas de treino, ensinar exercícios e técnica correta, séries/repetições, progressão de carga, divisões (ABC, push/pull/legs), treino em casa ou academia, aquecimento, cardio, recuperação e hipertrofia/emagrecimento pelo lado do exercício. Quando pedirem, MONTE um treino concreto (com exercícios, séries x reps).'
+   : 'Você é o "Nutri Natural", uma NUTRICIONISTA de ELITE do app Nutrika. Sua especialidade é ALIMENTAÇÃO: montar dietas e cardápios, calorias e macros, escolhas de alimentos, suplementos, hidratação, e hábitos alimentares. Quando pedirem, MONTE uma dieta/cardápio concreto.';
   return [
    persona+' Tire QUALQUER dúvida da sua área e dê conselhos práticos que funcionam. (Se a pergunta for da outra área, ajude mesmo assim e sugira trocar pro outro assistente no topo.)',
    'COMO RESPONDER:',
@@ -1511,7 +1511,7 @@ function reonboard(){ document.getElementById('set-ov').classList.remove('on'); 
 // ===================== ONBOARDING (full-screen wizard) =====================
 let ob={step:0,d:{}};
 const OB_STEPS=[
- {t:'👋 Bem-vindo ao natural.life!',s:'Vou montar seu plano em 30 segundos. Primeiro, qual o seu PESO?',k:'w',type:'num',ph:'kg (ex: 72)',min:25,max:400},
+ {t:'👋 Bem-vindo ao Nutrika!',s:'Vou montar seu plano em 30 segundos. Primeiro, qual o seu PESO?',k:'w',type:'num',ph:'kg (ex: 72)',min:25,max:400},
  {t:'📏 Sua altura',s:'Pra calcular suas calorias com precisão.',k:'h',type:'num',ph:'cm (ex: 175)',min:100,max:250},
  {t:'🎂 Sua idade',s:'O metabolismo muda com a idade.',k:'a',type:'num',ph:'anos (ex: 25)',min:8,max:110},
  {t:'⚧ Sexo biológico',s:'Afeta o cálculo do metabolismo.',k:'sex',type:'opt',opts:[['m','👨 Homem'],['f','👩 Mulher']]},
@@ -1520,7 +1520,7 @@ const OB_STEPS=[
 ];
 // ===================== INTRO / TUTORIAL / CONTA =====================
 const TUTORIAL=[
- {i:'👋',t:'Bem-vindo ao natural.life!',d:'Seu nutricionista E personal trainer com inteligência artificial, no bolso. Em 1 minutinho eu te mostro tudo. 🌿'},
+ {i:'👋',t:'Bem-vindo ao Nutrika!',d:'Seu nutricionista E personal trainer com inteligência artificial, no bolso. Em 1 minutinho eu te mostro tudo. 🌿'},
  {i:'🥗💪',t:'Dois apps em um só',d:'Na barra lá em cima você troca entre as duas partes:',b:['🥗 NUTRIÇÃO — dieta, calorias e sua nutricionista IA','💪 TREINO — treinos, exercícios e seu personal IA'],x:'Cada parte tem suas próprias abas e sua própria conversa.'},
  {i:'🤖',t:'A IA faz quase tudo por texto',d:'É só conversar com o assistente de cada parte:',b:['💬 "comi 2 ovos e arroz" → registra a comida','🏃 "fiz 30min de corrida" → registra o treino','📋 "monte uma dieta" ou "monte meu treino"','❓ Tire qualquer dúvida de nutrição ou treino']},
  {i:'📸',t:'Foto que calcula as calorias',d:'Tire uma foto do prato e a IA estima calorias e macros de tudo. Esqueceu um item? Escreva "faltou o ovo" que ela soma na hora. 🍽️'},
@@ -1533,7 +1533,7 @@ function logoBox(){ return '<div class="intro-logo"><img src="icon-180.png" alt=
 function startIntro(){ document.getElementById('intro').classList.add('on'); introWelcome(); }
 function introWelcome(){
   introHTML(logoBox()
-    +'<h1>natural.life</h1><div class="tag">Seu nutricionista e personal trainer com inteligência artificial. 🌿</div>'
+    +'<h1>Nutrika</h1><div class="tag">Seu nutricionista e personal trainer com inteligência artificial. 🌿</div>'
     +'<div class="intro-feats">'
     +'<div class="intro-feat"><span class="fi">🤖</span><span>IA que tira suas dúvidas e monta sua dieta</span></div>'
     +'<div class="intro-feat"><span class="fi">📸</span><span>Foto do prato calcula as calorias sozinha</span></div>'
@@ -1689,7 +1689,7 @@ function startReminders(){
   remTimers.forEach(t=>clearInterval(t)); remTimers=[];
   if((state.settings.remWater||state.settings.remMeal)&&'Notification'in window&&Notification.permission==='default') Notification.requestPermission();
   if(state.settings.remWater) remTimers.push(setInterval(()=>{ const dd=day(); if(dd.water<2500) notify('💧 Hora da água!','Você está em '+dd.water+'ml hoje. Bora hidratar! 💦'); },90*60*1000));
-  if(state.settings.remMeal) remTimers.push(setInterval(()=>{ const h=new Date().getHours(); if([8,12,19].includes(h)) notify('🍽️ Hora de comer','Não esqueça de registrar sua refeição no natural.life!'); },60*60*1000));
+  if(state.settings.remMeal) remTimers.push(setInterval(()=>{ const h=new Date().getHours(); if([8,12,19].includes(h)) notify('🍽️ Hora de comer','Não esqueça de registrar sua refeição no Nutrika!'); },60*60*1000));
 }
 
 // ===================== WEEKLY REPORT =====================

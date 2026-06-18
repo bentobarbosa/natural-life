@@ -199,7 +199,10 @@
   .intro-dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);transition:.25s;}
   .intro-dots i.on{background:#fff;width:22px;border-radius:5px;}
   .intro-lk{display:inline-block;margin-top:16px;color:#fff;opacity:.85;text-decoration:underline;font-size:13px;cursor:pointer;}
-  .intro-tut-ic{font-size:72px;margin-bottom:10px;}
+  .intro-tut-ic{font-size:66px;margin-bottom:8px;}
+  .tut-list{text-align:left;display:flex;flex-direction:column;gap:8px;margin:14px 0 4px;}
+  .tut-item{background:rgba(255,255,255,.15);border-radius:12px;padding:11px 13px;font-size:14px;font-weight:600;line-height:1.35;}
+  .intro-dots i{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -1504,11 +1507,13 @@ const OB_STEPS=[
 ];
 // ===================== INTRO / TUTORIAL / CONTA =====================
 const TUTORIAL=[
- {i:'🤖',t:'Assistente com IA',d:'Pergunte qualquer dúvida de nutrição e treino. Registre comida e treino só escrevendo, ex: "comi 2 ovos e arroz".'},
- {i:'📸',t:'Foto da refeição',d:'Tire uma foto do prato e a IA calcula as calorias e os macros de tudo — sem adicionar item por item.'},
- {i:'🍴',t:'Milhares de alimentos',d:'Busque qualquer comida ou marca (até pela internet) ou escaneie o código de barras do produto.'},
- {i:'🏋️',t:'Treino, metas e progresso',d:'Registre exercícios, acompanhe peso, água, suas metas e o relatório semanal da sua evolução.'},
- {i:'🔥',t:'Ofensiva diária',d:'Use o app todo dia (registre comida, água ou treino) pra manter sua ofensiva acesa, igual no Duolingo! E cada comida tem nota de saúde de 0 a 100 (🟢 verde = saudável, 🔴 vermelho = evitar).'},
+ {i:'👋',t:'Bem-vindo ao natural.life!',d:'Seu nutricionista E personal trainer com inteligência artificial, no bolso. Em 1 minutinho eu te mostro tudo. 🌿'},
+ {i:'🥗💪',t:'Dois apps em um só',d:'Na barra lá em cima você troca entre as duas partes:',b:['🥗 NUTRIÇÃO — dieta, calorias e sua nutricionista IA','💪 TREINO — treinos, exercícios e seu personal IA'],x:'Cada parte tem suas próprias abas e sua própria conversa.'},
+ {i:'🤖',t:'A IA faz quase tudo por texto',d:'É só conversar com o assistente de cada parte:',b:['💬 "comi 2 ovos e arroz" → registra a comida','🏃 "fiz 30min de corrida" → registra o treino','📋 "monte uma dieta" ou "monte meu treino"','❓ Tire qualquer dúvida de nutrição ou treino']},
+ {i:'📸',t:'Foto que calcula as calorias',d:'Tire uma foto do prato e a IA estima calorias e macros de tudo. Esqueceu um item? Escreva "faltou o ovo" que ela soma na hora. 🍽️'},
+ {i:'🍴',t:'Qualquer alimento, do seu jeito',d:'Pra registrar comida você pode:',b:['🔎 Buscar por nome ou marca (até online)','▮▮▮ Escanear o código de barras','🍞 Escolher por fatias, copos ou porções','🟢 Ver a nota de saúde de cada um (0 a 100)']},
+ {i:'💪',t:'Programa de treino pronto',d:'Na parte Treino, o personal monta um programa completo pro seu objetivo — em casa ou na academia — com exercícios, séries e repetições. 🏋️'},
+ {i:'🔥',t:'Mantenha a ofensiva!',d:'Use o app todo dia (registre comida, água ou treino) pra manter sua chama acesa, igual no Duolingo. Constância é o segredo. Bora! 💪'},
 ];
 function introHTML(html){ document.getElementById('intro-screen').innerHTML=html; }
 function logoBox(){ return '<div class="intro-logo"><img src="icon-180.png" alt="logo" onerror="this.parentNode.textContent=\'🌿\'"></div>'; }
@@ -1574,12 +1579,13 @@ function closeTutor(){ tutorMode=false; document.getElementById('intro').classLi
 function tutEnd(){ if(tutorMode) closeTutor(); else introToProfile(); }
 function introTutorial(idx){
   idx=Math.max(0,Math.min(TUTORIAL.length-1,idx)); const t=TUTORIAL[idx]; const last=idx===TUTORIAL.length-1;
+  const bullets=t.b?('<div class="tut-list">'+t.b.map(x=>'<div class="tut-item">'+x+'</div>').join('')+'</div>'):'';
+  const extra=t.x?('<div class="tag" style="font-size:13px;opacity:.9;margin-top:2px;">'+t.x+'</div>'):'';
   introHTML('<div class="intro-tut-ic">'+t.i+'</div>'
-    +'<h2>'+t.t+'</h2><div class="tag">'+t.d+'</div>'
-    +'<div class="intro-dots">'+TUTORIAL.map((_,i)=>'<i class="'+(i===idx?'on':'')+'"></i>').join('')+'</div>'
-    +'<button class="btn-white" onclick="introTutorial('+(idx+1)+')" '+(last?'style="display:none"':'')+'>Próximo →</button>'
-    +(last?('<button class="btn-white" onclick="tutEnd()">'+(tutorMode?'Entendi! ✅':'Vamos lá! 🚀')+'</button>'):'')
-    +(last?'':'<span class="intro-lk" onclick="tutEnd()">pular tutorial</span>'));
+    +'<h2>'+t.t+'</h2><div class="tag">'+t.d+'</div>'+bullets+extra
+    +'<div class="intro-dots">'+TUTORIAL.map((_,i)=>`<i class="${i===idx?'on':''}" onclick="introTutorial(${i})"></i>`).join('')+'</div>'
+    +(last?('<button class="btn-white" onclick="tutEnd()">'+(tutorMode?'Entendi! ✅':'Vamos lá! 🚀')+'</button>'):'<button class="btn-white" onclick="introTutorial('+(idx+1)+')">Próximo →</button>')
+    +'<div style="text-align:center;"><span class="intro-lk" onclick="tutEnd()">'+(last?'fechar':'pular tutorial')+'</span></div>');
 }
 function introToProfile(){ document.getElementById('intro-screen').innerHTML=''; startOb(); }
 // ---- backup / restauração ----

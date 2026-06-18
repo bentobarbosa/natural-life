@@ -124,6 +124,14 @@
   .streak-day.done{opacity:1;} .streak-day.done .c{background:#fff;}
   .streak-day.today .c{box-shadow:0 0 0 2.5px #fff;}
   .streak-tip{font-size:12.5px;line-height:1.4;margin-top:12px;background:rgba(255,255,255,.16);border-radius:12px;padding:9px 11px;text-align:left;}
+  .modebar{background:#fff;padding:8px 14px;border-bottom:1px solid #e6efe4;}
+  body.dark .modebar{background:#0e130d;border-bottom-color:#26301f;}
+  .modeseg{display:flex;gap:6px;background:#eef3ec;border-radius:14px;padding:4px;max-width:520px;margin:0 auto;}
+  body.dark .modeseg{background:#141b12;}
+  .modebtn{flex:1;border:none;background:none;padding:10px 6px;border-radius:11px;font-weight:800;font-size:15px;color:var(--mut);cursor:pointer;transition:.15s;}
+  .modebtn.on{color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  #mode-nutri.on{background:linear-gradient(135deg,#43a047,#66bb6a);}
+  #mode-treino.on{background:linear-gradient(135deg,#ef6c00,#fb8c00);}
   .seg{display:flex;gap:6px;background:#e8efe6;border-radius:14px;padding:4px;margin-bottom:10px;}
   body.dark .seg{background:#1a221a;}
   .seg-btn{flex:1;border:none;background:none;padding:10px 6px;border-radius:11px;font-weight:800;font-size:14px;color:var(--mut);cursor:pointer;}
@@ -205,6 +213,10 @@
       <button class="gear" onclick="openSettings()" title="Configurações">⚙️</button>
     </div>
   </header>
+  <div class="modebar"><div class="modeseg">
+    <button id="mode-nutri" class="modebtn on" onclick="setAppMode('nutri')">🥗 Nutrição</button>
+    <button id="mode-treino" class="modebtn" onclick="setAppMode('treino')">💪 Treino</button>
+  </div></div>
   <main>
     <!-- HOJE -->
     <section class="view on" id="v-hoje">
@@ -296,24 +308,14 @@
 
     <!-- IA -->
     <section class="view" id="v-ia">
-      <div class="seg" id="ai-seg">
-        <button class="seg-btn on" id="seg-nutri" onclick="setAiMode('nutri')">🥗 Nutricionista</button>
-        <button class="seg-btn" id="seg-treino" onclick="setAiMode('treino')">💪 Personal</button>
-      </div>
+      <div class="card" style="padding:11px 14px;margin-bottom:10px;"><div id="ia-title" style="font-weight:800;color:var(--g);font-size:15px;"></div><div class="mut" id="ia-sub" style="font-size:12px;"></div></div>
       <div id="chat"></div>
       <div class="chips" id="ai-chips"></div>
       <div id="ai-input-row"><button id="mic" onclick="toggleMic()" title="Falar">🎤</button><input id="ai-input" placeholder="Pergunte ou registre comida..."><button id="ai-send" onclick="aiSend()">➤</button></div>
     </section>
   </main>
 
-  <nav>
-    <button class="on" data-v="hoje" onclick="go('hoje')"><span class="i">🏠</span>Hoje</button>
-    <button data-v="diario" onclick="go('diario')"><span class="i">🍽️</span>Diário</button>
-    <button data-v="metas" onclick="go('metas')"><span class="i">🎯</span>Metas</button>
-    <button data-v="treino" onclick="go('treino')"><span class="i">🏋️</span>Treino</button>
-    <button data-v="peso" onclick="go('peso')"><span class="i">⚖️</span>Peso</button>
-    <button data-v="ia" onclick="go('ia')"><span class="i">🤖</span>IA</button>
-  </nav>
+  <nav id="mainnav"></nav>
 </div>
 
 <!-- food picker -->
@@ -436,7 +438,7 @@ const KEY='naturallife_v1';
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtDate=d=>{const x=new Date(d+'T00:00');return x.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});};
 let state=load();
-function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; if(s.workout===undefined) s.workout=null; return s; }
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s) s={profile:null,goals:null,days:{},weights:[]}; if(!s.ai) s.ai={prov:'auto',key:'',v:2}; if(s.ai.v!==2){ if(!s.ai.key) s.ai.prov='auto'; s.ai.v=2; } if(!s.settings) s.settings={}; const sd=s.settings; if(sd.remWater===undefined)sd.remWater=false; if(sd.remMeal===undefined)sd.remMeal=false; if(sd.dark===undefined)sd.dark=false; if(sd.tts===undefined)sd.tts=false; if(!s.chat) s.chat=[]; if(s.account===undefined) s.account=null; if(!s.dislikes) s.dislikes=[]; if(s.workout===undefined) s.workout=null; if(s.appMode!=='treino') s.appMode='nutri'; return s; }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
 function day(d){ d=d||todayStr(); if(!state.days[d]) state.days[d]={meals:{cafe:[],almoco:[],lanche:[],jantar:[]},water:0,ex:[]}; if(!state.days[d].ex) state.days[d].ex=[]; return state.days[d]; }
 
@@ -1087,7 +1089,7 @@ function addUnits(k,n){ const f=FOODS[k]; if(!f)return; addFoodEntry(curMeal,k,M
 function addCustomG(k){ const g=+document.getElementById('unit-custom').value; if(!g||g<1){return;} addFoodEntry(curMeal,k,g); closeFood(); }
 
 // ===================== NAV =====================
-function go(v){ document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso'){drawChart();renderReport();} if(v==='treino')renderTreino(); document.querySelector('main').scrollTop=0; }
+function go(v){ const tm=TAB_MODE[v]; if(tm&&tm!==appMode) setAppMode(tm,true); document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v)); document.querySelectorAll('#mainnav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); if(v==='peso'){drawChart();renderReport();} if(v==='treino')renderTreino(); document.querySelector('main').scrollTop=0; }
 
 // ===================== AI ASSISTANT =====================
 const KB=[
@@ -1316,7 +1318,7 @@ function tryWorkout(text){ const t=norm(text); const loc=/(casa|sem equipamento|
 function genWorkout(loc){ state.workout={loc}; save(); renderWorkout(); const el=document.getElementById('workout-prog'); if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function renderWorkout(){ const el=document.getElementById('workout-prog'); if(!el)return; const w=state.workout; if(!w){ el.style.display='none'; return; }
  const goal=(state.profile&&state.profile.goal)||'maintain'; const sp=buildSplit(w.loc,goal); el.style.display='block';
- el.innerHTML='<h2>🏋️ '+sp.title+'</h2>'+sp.days.map(d=>'<div class="day-plan"><h4>'+d[0]+'</h4><div class="dl">'+d[1].map(e=>'• '+e).join('<br>')+'</div></div>').join('')+'<div class="mut" style="font-size:12px;margin-top:6px;">📌 '+sp.note+'</div><div class="row" style="margin-top:10px;gap:8px;"><button class="btn sec" style="flex:1;" onclick="genWorkout(\''+(w.loc==='home'?'gym':'home')+'\')">↔️ '+(w.loc==='home'?'Academia':'Em casa')+'</button><button class="btn sec" style="flex:1;" onclick="go(\'ia\');setAiMode(\'treino\')">🤖 Falar com o personal</button></div>';
+ el.innerHTML='<h2>🏋️ '+sp.title+'</h2>'+sp.days.map(d=>'<div class="day-plan"><h4>'+d[0]+'</h4><div class="dl">'+d[1].map(e=>'• '+e).join('<br>')+'</div></div>').join('')+'<div class="mut" style="font-size:12px;margin-top:6px;">📌 '+sp.note+'</div><div class="row" style="margin-top:10px;gap:8px;"><button class="btn sec" style="flex:1;" onclick="genWorkout(\''+(w.loc==='home'?'gym':'home')+'\')">↔️ '+(w.loc==='home'?'Academia':'Em casa')+'</button><button class="btn sec" style="flex:1;" onclick="setAppMode(\'treino\');go(\'ia\')">🤖 Falar com o personal</button></div>';
 }
 function tryRecipe(text){ const t=norm(text); if(!/(receita|recipe|o que cozinhar|me ensina a fazer|prato fit|ideia de prato)/.test(t)) return null; const goal=(state.profile&&state.profile.goal)||'maintain'; let pool=RECIPES.filter(r=>r.tag===goal); if(!pool.length)pool=RECIPES; const r=pool[Math.floor(Math.random()*pool.length)]; return '🍳 RECEITA: '+r.n+' ('+r.kcal+' kcal · P'+r.p+' C'+r.c+' G'+r.f+')\n\nIngredientes:\n'+r.ing.map(x=>'• '+x).join('\n')+'\n\nModo: '+r.m+'\n\n💡 Veja mais em "Diário → 🍳 Receitas saudáveis".'; }
 function assistantAnswer(text){
@@ -1441,20 +1443,24 @@ async function askRealAI(text,ai){
   }
   aiHistory.push({role:'assistant',content:ans}); return ans.trim();
 }
-let aiMode='nutri';
+let aiMode='nutri', appMode='nutri';
+const NAV={nutri:[['hoje','🏠','Hoje'],['diario','🍽️','Diário'],['metas','🎯','Metas'],['ia','🥗','Nutri']],treino:[['treino','🏋️','Treino'],['peso','📈','Progresso'],['ia','💪','Personal']]};
+const TAB_MODE={hoje:'nutri',diario:'nutri',metas:'nutri',treino:'treino',peso:'treino'};
+function renderNav(){ const nav=document.getElementById('mainnav'); if(!nav)return; const cur=[...document.querySelectorAll('.view.on')].map(v=>v.id.replace('v-',''))[0]; nav.innerHTML=NAV[appMode].map(t=>`<button data-v="${t[0]}" class="${t[0]===cur?'on':''}" onclick="go('${t[0]}')"><span class="i">${t[1]}</span>${t[2]}</button>`).join(''); }
+function updateIaTitle(){ const t=document.getElementById('ia-title'), s=document.getElementById('ia-sub'); if(!t)return; if(appMode==='treino'){ t.textContent='💪 Personal Trainer'; s.textContent='Seu treinador: monta treinos, ensina exercícios, séries e progressão. Peça "monte meu treino".'; } else { t.textContent='🥗 Nutricionista'; s.textContent='Sua nutricionista: monta dietas, calcula macros e registra comida. Peça "monte uma dieta" ou "comi 2 ovos".'; } }
+function setAppMode(m,quiet){
+  const changed=appMode!==m; appMode=m; aiMode=m; if(state) state.appMode=m;
+  document.getElementById('mode-nutri').classList.toggle('on',m==='nutri');
+  document.getElementById('mode-treino').classList.toggle('on',m==='treino');
+  document.getElementById('v-ia').classList.toggle('treino',m==='treino');
+  const inp=document.getElementById('ai-input'); if(inp) inp.placeholder=m==='treino'?'Pergunte ao personal ou peça um treino...':'Pergunte à nutri ou registre comida...';
+  updateIaTitle(); buildChips(); renderNav();
+  if(!quiet){ if(state) save(); go(NAV[m][0][0]); }
+}
 const CHIPS_NUTRI={core:['💡 Resumo de hoje','🍽️ Monte uma dieta','🍳 Receita fit'],pool:['🥩 Bater proteína','🔻 Como emagrecer','🔺 Ganhar massa','😴 Importância do sono','💊 Vale a pena creatina?','⏳ Jejum intermitente','📉 Travei (platô)','🍕 Posso ter refeição livre?','🧠 Como criar disciplina?','💧 Quanta água beber?','🥦 Dieta low carb','🍫 Vontade de doce','⚖️ Por que a balança oscila?','🐟 Ômega-3 e magnésio','🌱 Proteína vegetal']};
 const CHIPS_TREINO={core:['🏋️ Monte meu treino','🏠 Treino em casa','📈 Como evoluir no treino?'],pool:['💪 Treino de peito','🦵 Treino de pernas','🔙 Treino de costas','🏃 Quanto cardio fazer?','🤸 Aquecimento certo','😴 Quanto descanso?','🔥 Treino pra emagrecer','💥 O que é hipertrofia?','⏱️ Treino rápido (30min)','🧗 Calistenia','☕ Pré-treino natural','📅 Quantos dias treinar?','🦵 Agachamento correto','💢 Dor pós-treino (DOMS)']};
 function buildChips(){ const c=document.getElementById('ai-chips'); if(!c)return; const set=aiMode==='treino'?CHIPS_TREINO:CHIPS_NUTRI; const extra=[...set.pool].sort(()=>Math.random()-0.5).slice(0,4); const all=[...set.core,...extra]; c.innerHTML=all.map(q=>`<span class="pill" onclick="chip('${q.replace(/'/g,"")}')">${q}</span>`).join(''); }
-function setAiMode(m){
-  aiMode=m; aiHistory=[];
-  document.getElementById('seg-nutri').classList.toggle('on',m==='nutri');
-  document.getElementById('seg-treino').classList.toggle('on',m==='treino');
-  document.getElementById('v-ia').classList.toggle('treino',m==='treino');
-  document.getElementById('ai-input').placeholder = m==='treino'?'Pergunte sobre treino ou peça um programa...':'Pergunte ou registre comida...';
-  buildChips();
-  const nm=(state.account&&state.account.name)?(', '+state.account.name.split(' ')[0]):'';
-  addMsg(m==='treino'?('💪 Modo PERSONAL TRAINER ativado'+nm+'! Posso montar seu treino, ensinar exercícios, séries e progressão. Peça "monte meu treino" 🏋️'):('🥗 Modo NUTRICIONISTA'+nm+'! Posso montar sua dieta, calcular macros e tirar dúvidas de alimentação. Peça "monte uma dieta" 🍽️'),'bot');
-}
+function setAiMode(m){ setAppMode(m); }
 function chip(q){ document.getElementById('ai-input').value=q.replace(/^\S+\s/,''); aiSend(); }
 document.getElementById('ai-input').addEventListener('keydown',e=>{ if(e.key==='Enter')aiSend(); });
 ['ex-min','ex-type'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',exPreview); });
@@ -1893,7 +1899,7 @@ function applyPlanDay(di){
 function init(){
   applyDark(state.settings.dark);
   if(state.profile){ document.getElementById('i-weight').value=state.profile.w; document.getElementById('i-height').value=state.profile.h; document.getElementById('i-age').value=state.profile.a; document.getElementById('i-sex').value=state.profile.sex; document.getElementById('i-act').value=state.profile.act; document.getElementById('i-goal').value=state.profile.goal; renderGoalsOut(); }
-  renderAll(); buildChips(); startReminders();
+  renderAll(); setAppMode(state.appMode||'nutri',true); go(NAV[appMode][0][0]); startReminders();
   if(!state.account && !state.profile){
     startIntro();
   } else if(!state.profile){

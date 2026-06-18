@@ -1,6 +1,6 @@
 // natural.life service worker — offline app shell (network-first, cache fallback)
-const CACHE = 'naturallife-v6';
-const ASSETS = ['./', './index.html', './icon-180.png', './manifest.webmanifest'];
+const CACHE = 'naturallife-v7';
+const ASSETS = ['./', './index.html', './icon-180.png', './icon-192.png', './icon-512.png', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(()=>{}));

@@ -203,6 +203,9 @@
   .tut-list{text-align:left;display:flex;flex-direction:column;gap:8px;margin:14px 0 4px;}
   .tut-item{background:rgba(255,255,255,.15);border-radius:12px;padding:11px 13px;font-size:14px;font-weight:600;line-height:1.35;}
   .intro-dots i{cursor:pointer;}
+  #install-banner{position:absolute;left:10px;right:10px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:54;background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);font-weight:700;font-size:13px;}
+  #install-banner .btn{padding:8px 14px;background:#fff;color:#2e7d32;}
+  #install-banner .ib-x{padding:4px 8px;opacity:.85;cursor:pointer;font-weight:800;}
 </style>
 </head>
 <body>
@@ -318,6 +321,7 @@
     </section>
   </main>
 
+  <div id="install-banner" style="display:none;"><span>📲 Instalar o natural.life no seu celular</span><div><button class="btn" id="install-btn" onclick="doInstall()">Instalar</button><span class="ib-x" onclick="dismissInstall()">✕</span></div></div>
   <nav id="mainnav"></nav>
 </div>
 
@@ -368,7 +372,7 @@
   <div style="font-weight:800;color:var(--g);font-size:14px;margin:16px 0 2px;">🎨 Aparência & voz</div>
   <div class="toggle"><div><div class="lbl">🌙 Modo escuro</div><div class="d">Tema escuro pro app</div></div><div class="sw" id="sw-dark" onclick="toggleSw('dark')"><i></i></div></div>
   <div class="toggle"><div><div class="lbl">🔊 IA fala as respostas</div><div class="d">Lê as respostas em voz alta</div></div><div class="sw" id="sw-tts" onclick="toggleSw('tts')"><i></i></div></div>
-  <div class="row" style="margin-top:14px;"><button class="btn sec wide" onclick="openTutor()">❓ Ver tutorial de novo</button></div>
+  <div class="row" style="margin-top:14px;gap:8px;"><button class="btn sec" style="flex:1;" onclick="installApp()">📲 Instalar app</button><button class="btn sec" style="flex:1;" onclick="openTutor()">❓ Tutorial</button></div>
   <div class="row" style="margin-top:16px;gap:8px;">
     <button class="btn sec" onclick="reonboard()" style="flex:1;">✏️ Refazer perfil</button>
     <button class="btn" onclick="saveSettings()" style="flex:1;">Salvar</button>
@@ -1920,6 +1924,21 @@ function init(){
 init();
 // PWA: registra service worker pra app funcionar offline e instalar no celular
 if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+// ===== INSTALAR APP (Android/Chrome/Samsung mostram o prompt nativo) =====
+let deferredInstall=null;
+function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true; }
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstall=e; if(!isStandalone() && !localStorage.getItem('installDismissed')){ const b=document.getElementById('install-banner'); if(b) b.style.display='flex'; } });
+function doInstall(){ if(!deferredInstall) return; deferredInstall.prompt(); deferredInstall.userChoice.finally(()=>{ deferredInstall=null; const b=document.getElementById('install-banner'); if(b) b.style.display='none'; }); }
+function dismissInstall(){ try{localStorage.setItem('installDismissed','1');}catch(e){} const b=document.getElementById('install-banner'); if(b) b.style.display='none'; }
+function installApp(){
+  if(isStandalone()){ alert('✅ O app já está instalado no seu celular!'); return; }
+  if(deferredInstall){ doInstall(); return; }
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  alert(ios
+    ? '📲 Pra instalar no iPhone:\n\n1. Abra no Safari\n2. Toque em Compartilhar (⬆️)\n3. "Adicionar à Tela de Início"'
+    : '📲 Pra instalar no Android/Samsung:\n\n1. Toque no menu do navegador (⋮)\n2. Toque em "Instalar app" ou "Adicionar à tela inicial"\n\n(No Samsung Internet: menu ☰ → "Adicionar página a" → "Tela inicial")');
+}
+window.addEventListener('appinstalled', ()=>{ const b=document.getElementById('install-banner'); if(b) b.style.display='none'; deferredInstall=null; });
 </script>
 </body>
 </html>
